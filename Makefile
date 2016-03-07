@@ -22,7 +22,7 @@ OBJS := \
 	main.o
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -g -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 
 $(EXEC): $(OBJS)
