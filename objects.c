@@ -4,47 +4,53 @@
 #include "primitives.h"
 #include "objects.h"
 
-#define FUNC_BEGIN(name) \
-    void append_##name (const name *X, name##_node *list) { \
-        name##_node newNode = malloc(sizeof(struct __##name##_node));
-
-#define FUNC_END(name) \
-        newNode->next = NULL; \
-        if (!*list) { *list = newNode; } \
-        else { \
-            name##_node tmp; \
-            for (tmp = *list; tmp->next; tmp = tmp->next) ; \
-            tmp->next = newNode; \
-        } \
+#define GEN_DELETE_FUNC(name)   \
+void delete_##name##_list(name##_node *list) \
+{ \
+    while(*list) { \
+        name##_node nextNode= (*list)->next; \
+        free(*list); \
+        *list = nextNode; \
     } \
-    void delete_##name##_list(name##_node *list) { \
-	name##_node pos = *list; \
-        while (pos) { \
-            name##_node tmp = pos->next; \
-            free(pos); pos = tmp; \
-        } \
-        *list = NULL; \
+}
+
+void append_object(const object *X, object_node *list)
+{
+    object_node newNode = malloc(sizeof(object_node_body)+X->vt->private_data_size);
+    X->vt->clone(X, &newNode->element);
+    newNode->next = NULL;
+    if(!*list)
+        *list = newNode;
+    else
+    {
+        object_node p;
+        /* locate the last node */
+        for(p=*list; p->next; p=p->next);
+        p->next = newNode;
     }
+}
 
-// *INDENT-OFF*
-FUNC_BEGIN(light)
-    COPY_POINT3(newNode->element.position, X->position);
-    COPY_COLOR(newNode->element.light_color, X->light_color);
-    newNode->element.intensity = X->intensity;
-FUNC_END(light)
+GEN_DELETE_FUNC(object);
 
-FUNC_BEGIN(rectangular)
-    COPY_OBJECT_FILL(newNode->element.rectangular_fill, X->rectangular_fill);
-    for (int i = 0; i < 4; i++) {
-        COPY_POINT3(newNode->element.vertices[i], X->vertices[i]);
-        COPY_POINT3(newNode->element.normal, X->normal);
+void append_light(const light *X, light_node *list)
+{
+    light_node newNode = malloc(sizeof(light_node_body));
+    newNode->element = *X;    
+    newNode->next = NULL;
+    if(!*list)
+        *list = newNode;
+    else
+    {
+        light_node p;
+        /* locate the last node */
+        for(p=*list; p->next; p=p->next);
+        p->next = newNode;
     }
-FUNC_END(rectangular)
+}
 
-FUNC_BEGIN(sphere)
-    COPY_OBJECT_FILL(newNode->element.sphere_fill, X->sphere_fill);
-    newNode->element.radius = X->radius;
-    COPY_POINT3(newNode->element.center, X->center);
-    FUNC_END(sphere)
+GEN_DELETE_FUNC(light);
+
+
+
 
 // *INDENT-ON*

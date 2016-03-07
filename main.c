@@ -21,8 +21,7 @@ int main()
 {
     uint8_t *pixels;
     light_node lights = NULL;
-    rectangular_node rectangulars = NULL;
-    sphere_node spheres = NULL;
+    object_node objects = NULL;
     color background = { 0.0, 0.0, 0.0 };
 
 #include "use-models.h"
@@ -34,15 +33,14 @@ int main()
     printf("# Rendering scene\n");
     /* do the ray tracing with the given geometry */
     raytracing(pixels, background,
-               rectangulars, spheres, lights, &view, ROWS, COLS);
+               objects, lights, &view, ROWS, COLS);
     {
         FILE *outfile = fopen(OUT_FILENAME, "wb");
         write_to_ppm(outfile, pixels, ROWS, COLS);
         fclose(outfile);
     }
 
-    delete_rectangular_list(&rectangulars);
-    delete_sphere_list(&spheres);
+    delete_object_list(&objects);
     delete_light_list(&lights);
     printf("Done!\n");
     return 0;

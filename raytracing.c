@@ -12,124 +12,6 @@
 #define SQUARE(x) (x * x)
 #define MAX(a, b) (a > b ? a : b)
 
-/* @param t t distance
- * @return 1 means hit, otherwise 0
- */
-static int raySphereIntersection(const point3 ray_e,
-                                 const point3 ray_d,
-                                 const sphere *sph,
-                                 point3 surface_normal,
-                                 double *t1)
-{
-    point3 l, p;
-    subtract_vector(sph->center, ray_e, l);
-	double s = dot_product(l, ray_d);
-	double l2 = dot_product(l, l);
-	double r2 = sph->radius*sph->radius;
-
-	if(s<0 && l2 > r2)
-		return 0;
-	float m2 = l2 - s*s;
-	if(m2>r2)
-		return 0;
-	float q = sqrt(r2 - m2);
-	if(l2>r2)
-		*t1 = s - q;
-	else
-		*t1 = s + q;
-    // p=e+t1*d
-    multiply_vector(ray_d, *t1, p);
-    add_vector(ray_e, p, p);
-
-    subtract_vector(p, sph->center, surface_normal);
-    normalize(surface_normal);
-
-	return 1;
-}
-
-/* @return 1 means hit, otherwise 0; */
-static int rayRectangularIntersection(const point3 ray_e,
-                                      const point3 ray_d,
-                                      rectangular *rec,
-                                      point3 surface_normal,
-                                      double *t1)
-{
-    point3 e01, e03, p;
-    subtract_vector(rec->vertices[1], rec->vertices[0], e01);
-    subtract_vector(rec->vertices[3], rec->vertices[0], e03);
-
-    cross_product(ray_d, e03, p);
-
-    double det = dot_product(e01, p);
-
-    // Reject rays orthagonal to the normal vector. I.e. rays parallell to the plane.
-    if(det < 1e-4)
-        return 0;
-    
-    double inv_det = 1.0/det;
-
-    point3 s;
-    subtract_vector(ray_e, rec->vertices[0], s);
-
-    double alpha = inv_det * dot_product(s, p);
-
-    if(alpha > 1.0)
-        return 0;
-    if(alpha < 0.0)
-        return 0;
-
-    point3 q;
-    cross_product(s, e01, q);
-
-    double beta = inv_det * dot_product(ray_d, q);
-    if(beta > 1.0)
-        return 0;
-    if(beta < 0.0)
-        return 0;
-
-    *t1 = inv_det * dot_product(e03, q);
-
-    point3 intersect;
-    if(alpha + beta > 1.0f) {
-        /* for the second triangle */
-        point3 e23, e21;
-        subtract_vector(rec->vertices[3], rec->vertices[2], e23);
-        subtract_vector(rec->vertices[1], rec->vertices[2], e21);
-        
-        cross_product(ray_d, e21, p);
-
-        det = dot_product(e23, p);
-
-        if(det < 1e-4)
-            return 0;
-
-        inv_det = 1.0/det;
-        subtract_vector(ray_e, rec->vertices[2], s);
-        
-        alpha = inv_det * dot_product(s, p);
-        if(alpha < 0.0)
-            return 0;
-        
-        cross_product(s, e23, q);
-        beta = inv_det * dot_product(ray_d, q);
-
-        if(beta < 0.0)
-            return 0;
-
-        if(beta + alpha > 1.0)
-            return 0;
- 
-        *t1 = inv_det * dot_product(e21, q);
-    }
-    
-    if(*t1 < 1e-4)
-        return 0;
-    
-    COPY_POINT3(surface_normal, rec->normal);
-    subtract_vector(intersect, ray_e, intersect);
-    return 1;
-}
-
 static void localColor(color local_color,
                        const color light_color, double diffuse,
                        double specular, const object_fill *fill)
@@ -224,49 +106,34 @@ static void refraction(point3 t, const point3 d, const point3 n,
 static double ray_hit_object(const point3 e, const point3 d,
                              double t0, double t1,
                              point3 normal,
-                             const rectangular_node rectangulars,
-                             rectangular_node *hit_rectangular,
-                             const rectangular_node last_rectangular,
-                             const sphere_node spheres,
-                             sphere_node *hit_sphere,
-                             const sphere_node last_sphere)
+                             const object_node objects,
+                             object_node *hit_object,
+                             const object_node last_object)
 {
-    /* set these to not hit */
-    *hit_rectangular = NULL;
-    *hit_sphere = NULL;
 
     point3 biased_e;
     multiply_vector(d, t0, biased_e);
     add_vector(biased_e, e, biased_e);
 
     double nearest = t1;
+    point3 tmpnormal;
 
-    for (rectangular_node rec = rectangulars; rec; rec = rec->next) {
-        if (rec == last_rectangular)
+    *hit_object=NULL;
+
+    for (object_node obj = objects; obj; obj = obj->next) {
+        if (obj == last_object)
             continue;
 
-        if (rayRectangularIntersection(biased_e, d, &(rec->element), normal,
+        if (obj->element.vt->rayIntersection(&(obj->element), biased_e, d, tmpnormal,
                                        &t1) && t1<nearest) {
             /* hit is closest so far */
-            *hit_rectangular = rec;
+            *hit_object = obj;
             nearest = t1;
+            COPY_POINT3(normal, tmpnormal);
         }
     }
 
-    /* check the spheres */
-    for (sphere_node sphere = spheres; sphere; sphere = sphere->next) {
-        if (sphere == last_sphere)
-            continue;
-
-        if (raySphereIntersection(biased_e, d, &(sphere->element), normal,
-                                  &t1) && t1<nearest) {
-            *hit_sphere = sphere;
-            *hit_rectangular = NULL;
-            nearest = t1;
-        }
-    }
-
-    return t1;
+    return nearest;
 }
 
 /* @param d direction of ray
@@ -327,17 +194,14 @@ static void protect_color_overflow(color c)
         if (c[i] > 1.0) c[i] = 1.0;
 }
 
-static unsigned int ray_color(const point3 e, int t,
+static unsigned int ray_color(const point3 e, double t,
                               const point3 d,
-                              const rectangular_node rectangulars,
-                              const sphere_node spheres,
+                              const object_node objects,
                               const light_node lights,
                               color object_color, int bounces_left,
-                              const rectangular_node last_rectangular,
-                              const sphere_node last_sphere)
+                              const object_node last_object)
 {
-    rectangular_node hit_rec = NULL, light_hit_rec = NULL;
-    sphere_node hit_sphere = NULL, light_hit_sphere = NULL;
+    object_node hit_object = NULL, light_hit_object = NULL;
     double t1 = MAX_DISTANCE, diffuse, specular;
     point3 p, surface_normal, l, _l, ignore_me, r;
     object_fill fill;
@@ -351,11 +215,9 @@ static unsigned int ray_color(const point3 e, int t,
     }
 
     /* check for intersection with a sphere or a rectangular */
-    t1 = ray_hit_object(e, d, t, MAX_DISTANCE, surface_normal, rectangulars,
-                        &hit_rec, last_rectangular, spheres, &hit_sphere,
-                        last_sphere);
+    t1 = ray_hit_object(e, d, t, MAX_DISTANCE, surface_normal, objects, &hit_object, last_object);
    
-    if (!hit_rec && !hit_sphere)
+    if (!hit_object)
         return 0;
 
     /* p = e + t * d */
@@ -363,9 +225,7 @@ static unsigned int ray_color(const point3 e, int t,
     add_vector(e, p, p);
 
     /* pick the fill of the object that was hit */
-    fill = hit_rec ?
-           hit_rec->element.rectangular_fill :
-           hit_sphere->element.sphere_fill;
+    fill = hit_object->element.fill;
 
     /* assume it is a shadow */
     SET_COLOR(object_color, 0.0, 0.0, 0.0);
@@ -375,24 +235,22 @@ static unsigned int ray_color(const point3 e, int t,
         subtract_vector(p, light->element.position, l);
         multiply_vector(l, -1, _l);
         normalize(_l);
-
+        
         /* check for intersection with an object. use ignore_me
          * because we don't care about this normal
         */
         ray_hit_object(p, _l, MIN_DISTANCE, length(l), ignore_me,
-                       rectangulars, &light_hit_rec, hit_rec,
-                       spheres, &light_hit_sphere, hit_sphere);
+                       objects, &light_hit_object, hit_object);
 
         /* the light was not block by itself(lit object) */
-        if (light_hit_rec || light_hit_sphere)
+        if (light_hit_object)
             continue;
-
 
         compute_specular_and_diffuse(&diffuse, &specular, d, l,
                                      surface_normal, fill.phong_power);
 
         localColor(object_color, light->element.light_color,
-                   diffuse, specular, &fill);
+                  diffuse, specular, &fill);
 
         /* totalColor = localColor + Ks*reflection + T*refraction */
         if (fill.Ks > 0) {
@@ -400,38 +258,35 @@ static unsigned int ray_color(const point3 e, int t,
 
             /* if we hit something, add the color
             * that's a result of that */
-            if (ray_color(p, MIN_DISTANCE , r, rectangulars, spheres,
+            if (ray_color(p, MIN_DISTANCE , r, objects,
                           light, reflection_part,
                           bounces_left - 1,
-                          hit_rec, hit_sphere)) {
+                          hit_object)) {
                 multiply_vector(reflection_part, fill.Ks,
                                 reflection_part);
-                add_vector(object_color, reflection_part,
-                           object_color);
+                //add_vector(object_color, reflection_part,
+                //           object_color);
             }
         }
 
         /* calculate refraction ray */
         if (fill.T > 0.0 && fill.index_of_refraction > 0.0) {
             double idx = 1.0;
-            if (last_rectangular)
-                idx = last_rectangular->element.rectangular_fill.index_of_refraction;
-            else if (last_sphere)
-                idx = last_sphere->element.sphere_fill.index_of_refraction;
+            if (last_object)
+                idx = last_object->element.fill.index_of_refraction;
             refraction(r, d, surface_normal, idx,
                        fill.index_of_refraction);
 
             multiply_vector(d, -t1, p);
             add_vector(e, p, p);
 
-            if (ray_color(p, MIN_DISTANCE, r, rectangulars, spheres,
+            if (ray_color(p, MIN_DISTANCE, r, objects,
                           lights, refraction_part,
-                          bounces_left - 1, hit_rec,
-                          hit_sphere)) {
+                          bounces_left - 1, hit_object)) {
                 multiply_vector(refraction_part, fill.T,
                                 refraction_part);
-                add_vector(object_color, refraction_part,
-                           object_color);
+                //add_vector(object_color, refraction_part,
+                //           object_color);
             }
         }
         protect_color_overflow(object_color);
@@ -441,8 +296,8 @@ static unsigned int ray_color(const point3 e, int t,
 
 /* @param background_color this is not ambient light */
 void raytracing(uint8_t *pixels, color background_color,
-                rectangular_node rectangulars, sphere_node spheres,
-                light_node lights, const viewpoint *view,
+                object_node objects, light_node lights, 
+                const viewpoint *view,
                 int width, int height)
 {
     point3 u, v, w, d;
@@ -454,9 +309,9 @@ void raytracing(uint8_t *pixels, color background_color,
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
             rayConstruction(d, u, v, w, i, j, view, width, height);
-            if (ray_color(view->vrp, 0.0, d, rectangulars, spheres,
+            if (ray_color(view->vrp, 0.0, d, objects,
                           lights, object_color,
-                          MAX_REFLECTION_BOUNCES, NULL,
+                          MAX_REFLECTION_BOUNCES,
                           NULL)) {
                 pixels[((i + (j*width)) * 3) + 0] = object_color[0] * 255;
                 pixels[((i + (j*width)) * 3) + 1] = object_color[1] * 255;

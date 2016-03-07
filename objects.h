@@ -1,20 +1,26 @@
 #ifndef __RAY_OBJECTS_H
 #define __RAY_OBJECTS_H
 
-#define DECLARE_OBJECT(name) \
-    struct __##name##_node; \
-    typedef struct __##name##_node *name##_node; \
-    struct __##name##_node { \
-        name element; \
-        name##_node next; \
-    }; \
-    void append_##name(const name *X, name##_node *list); \
-    void delete_##name##_list(name##_node *list);
+struct _OBJECT_NODE;
+typedef struct _OBJECT_NODE *object_node;
+typedef struct _OBJECT_NODE object_node_body;
+struct _OBJECT_NODE {
+    object_node next;
+    object element;
+};
 
-DECLARE_OBJECT(light)
-DECLARE_OBJECT(rectangular)
-DECLARE_OBJECT(sphere)
+void append_object(const object *X, object_node *list);
+void delete_object_list(object_node *list);
 
-#undef DECLARE_OBJECT
+struct _LIGHT_NODE;
+typedef struct _LIGHT_NODE *light_node;
+typedef struct _LIGHT_NODE light_node_body;
+struct _LIGHT_NODE {
+    light_node next;
+    light element;
+};
+
+void append_light(const light *X, light_node *list);
+void delete_light_list(light_node *list);
 
 #endif

@@ -20,16 +20,38 @@ typedef struct {
     double phong_power; /**< the Phong cosine power for highlights */
 } object_fill;
 
+/* forward declare is necessary */
+struct _OBJECT;
+typedef struct _OBJECT object;
 typedef struct {
-    point3 center;
-    double radius;
-    object_fill sphere_fill;
-} sphere;
+    void (*clone)(const object *this_ptr, object *target);
+    int (*rayIntersection)(const struct _OBJECT *this_ptr, const point3 ray_e, const point3 ray_d, point3 surface_normal, double *t);
+    /* though this is not a function pointer I put it here */
+    int object_id;
+    int private_data_size;
+} object_virtual_table;
+
+typedef struct _OBJECT{
+    object_virtual_table *vt;
+    object_fill fill;
+    char private_data[];
+} object;
 
 typedef struct {
+    object_virtual_table *vt;
+    object_fill fill;
+    point3 center;
+    double radius;
+} sphere;
+
+extern object_virtual_table vt_sphere;
+extern object_virtual_table vt_rectangular;
+
+typedef struct {
+    object_virtual_table *vt;
+    object_fill fill;
     point3 vertices[4];
     point3 normal;
-    object_fill rectangular_fill;
 } rectangular;
 
 typedef struct {
