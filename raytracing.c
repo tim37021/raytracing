@@ -85,21 +85,41 @@ static void reflection(point3 r, const point3 d, const point3 n)
     add_vector(r, d, r);
 }
 
-static void refraction(point3 t, const point3 d, const point3 n,
-                       double from, double to)
+/* reference: https://www.opengl.org/sdk/docs/man/html/refract.xhtml */
+static void refraction(point3 t, const point3 I, const point3 N, double n1, double n2)
 {
-    /* t = (n_f(d - n(d.n)))/n_t - n*sqrt(1 - (n_f^2(1 - (d.n)^2))/n_t^2) */
-    point3 tmp;
+    double eta = n1/n2;
+    double dot_NI = dot_product(N,I);
+    double k = 1.0 - eta*eta*(1.0 - dot_NI*dot_NI);
+    if(k < 0.0)
+        t[0]=t[1]=t[2]=0.0;
+    else {
+        point3 tmp;
+        multiply_vector(I, eta, t);
+        multiply_vector(N, eta*dot_NI+sqrt(k), tmp);
+        subtract_vector(t, tmp, t);
+    }
+}
 
-    multiply_vector(n, dot_product(d, n), tmp);
-    subtract_vector(d, tmp, t);
-    multiply_vector(t, from, t);
-    multiply_vector(t, 1.0 / to, t);
 
-    double x = sqrt(1 - ((SQUARE(from) *
-                          (1 - SQUARE(dot_product(d, n)))) / SQUARE(to)));
-    multiply_vector(n, x, tmp);
-    subtract_vector(t, tmp, t);
+/* @param i direction of incoming ray, unit vector
+ * @param r direction of refraction ray, unit vector
+ * @param normal unit vector
+ * @param n1 refraction index
+ * @param n2 refraction index
+ */
+
+/* reference: http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf */
+static double fresnel(const point3 r, const point3 l, const point3 normal, double n1, double n2)
+{
+    // TIR
+    if(length(l)<0.99)
+        return 1.0;
+    double cos_theta_i = -dot_product(r, normal);
+    double cos_theta_t = -dot_product(l, normal);
+    double r_vertical_root = (n1*cos_theta_i-n2*cos_theta_t)/(n1*cos_theta_i+n2*cos_theta_t);
+    double r_parallel_root = (n2*cos_theta_i-n1*cos_theta_t)/(n2*cos_theta_i+n1*cos_theta_t);
+    return (r_vertical_root*r_vertical_root+r_parallel_root*r_parallel_root)/2.0;
 }
 
 /* @param t distance */
@@ -203,7 +223,7 @@ static unsigned int ray_color(const point3 e, double t,
 {
     object_node hit_object = NULL, light_hit_object = NULL;
     double t1 = MAX_DISTANCE, diffuse, specular;
-    point3 p, surface_normal, l, _l, ignore_me, r;
+    point3 p, surface_normal, l, _l, ignore_me, r, rr;
     object_fill fill;
 
     color reflection_part;
@@ -251,46 +271,46 @@ static unsigned int ray_color(const point3 e, double t,
 
         localColor(object_color, light->element.light_color,
                   diffuse, specular, &fill);
+    }
 
-        /* totalColor = localColor + Ks*reflection + T*refraction */
-        if (fill.Ks > 0) {
-            reflection(r, d, surface_normal);
+    reflection(r, d, surface_normal);
+    double idx = 1.0;
+    if (last_object)
+        idx = last_object->element.fill.index_of_refraction;
+    refraction(rr, d, surface_normal, idx, fill.index_of_refraction);
+    double R = fill.T>0.1? fresnel(d, rr, surface_normal, idx, fill.index_of_refraction): 1.0;
 
-            /* if we hit something, add the color
-            * that's a result of that */
-            if (ray_color(p, MIN_DISTANCE , r, objects,
-                          light, reflection_part,
+    /* totalColor = localColor + mix((1-fill.Kd)*fill.R*reflection, T*refraction, R) */
+    if (fill.R > 0) {
+        /* if we hit something, add the color
+        * that's a result of that */
+        if (ray_color(p, MIN_DISTANCE , r, objects,
+                          lights, reflection_part,
                           bounces_left - 1,
                           hit_object)) {
-                multiply_vector(reflection_part, fill.Ks,
-                                reflection_part);
-                add_vector(object_color, reflection_part,
-                           object_color);
-            }
+
+            multiply_vector(reflection_part, R*(1.0-fill.Kd)*fill.R,
+                            reflection_part);
+            add_vector(object_color, reflection_part,
+                               object_color);
         }
+    }
 
-        /* calculate refraction ray */
-        if (fill.T > 0.0 && fill.index_of_refraction > 0.0) {
-            double idx = 1.0;
-            if (last_object)
-                idx = last_object->element.fill.index_of_refraction;
-            refraction(r, d, surface_normal, idx,
-                       fill.index_of_refraction);
 
-            multiply_vector(d, -t1, p);
-            add_vector(e, p, p);
+    /* calculate refraction ray */
+    if (fill.T > 0.0 && fill.index_of_refraction > 0.0) {
 
-            if (ray_color(p, MIN_DISTANCE, r, objects,
+        if (ray_color(p, MIN_DISTANCE, rr, objects,
                           lights, refraction_part,
                           bounces_left - 1, hit_object)) {
-                multiply_vector(refraction_part, fill.T,
-                                refraction_part);
-                add_vector(object_color, refraction_part,
+            multiply_vector(refraction_part, (1.0-R)*fill.T,
+                            refraction_part);
+            add_vector(object_color, refraction_part,
                            object_color);
-            }
         }
-        protect_color_overflow(object_color);
     }
+    
+    protect_color_overflow(object_color);
     return 1;
 }
 
@@ -309,7 +329,9 @@ void raytracing(uint8_t *pixels, color background_color,
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
             rayConstruction(d, u, v, w, i, j, view, width, height);
+            normalize(d);
             if (ray_color(view->vrp, 0.0, d, objects,
+
                           lights, object_color,
                           MAX_REFLECTION_BOUNCES,
                           NULL)) {
