@@ -4,6 +4,7 @@
 #include "math-toolkit.h"
 #include "primitives.h"
 #include "raytracing.h"
+#include "idx_stack.h"
 
 #define MAX_REFLECTION_BOUNCES	3
 #define MAX_DISTANCE 1000000000000.0
@@ -92,7 +93,7 @@ static void refraction(point3 t, const point3 I, const point3 N, double n1, doub
     double eta = n1/n2;
     double dot_NI = dot_product(N,I);
     double k = 1.0 - eta*eta*(1.0 - dot_NI*dot_NI);
-    if(k < 0.0)
+    if(k < 0.0 || n2 <= 0.0)
         t[0]=t[1]=t[2]=0.0;
     else {
         point3 tmp;
@@ -124,12 +125,10 @@ static double fresnel(const point3 r, const point3 l, const point3 normal, doubl
 }
 
 /* @param t distance */
-static double ray_hit_object(const point3 e, const point3 d,
+static intersection ray_hit_object(const point3 e, const point3 d,
                              double t0, double t1,
-                             point3 normal,
                              const object_node objects,
-                             object_node *hit_object,
-                             const object_node last_object)
+                             object_node *hit_object)
 {
 
     point3 biased_e;
@@ -137,24 +136,21 @@ static double ray_hit_object(const point3 e, const point3 d,
     add_vector(biased_e, e, biased_e);
 
     double nearest = t1;
-    point3 tmpnormal;
+    intersection result, tmpresult;
 
     *hit_object=NULL;
 
     for (object_node obj = objects; obj; obj = obj->next) {
-        if (obj == last_object)
-            continue;
-
-        if (obj->element.vt->rayIntersection(&(obj->element), biased_e, d, tmpnormal,
+        if (obj->element.vt->rayIntersection(&(obj->element), biased_e, d, &tmpresult,
                                        &t1) && t1<nearest) {
             /* hit is closest so far */
             *hit_object = obj;
             nearest = t1;
-            COPY_POINT3(normal, tmpnormal);
+            result = tmpresult;
         }
     }
 
-    return nearest;
+    return result;
 }
 
 /* @param d direction of ray
@@ -217,33 +213,29 @@ static void protect_color_overflow(color c)
 
 static unsigned int ray_color(const point3 e, double t,
                               const point3 d,
+                              idx_stack *stk,
                               const object_node objects,
                               const light_node lights,
-                              color object_color, int bounces_left,
-                              const object_node last_object)
+                              color object_color, int bounces_left)
 {
     object_node hit_object = NULL, light_hit_object = NULL;
-    double t1 = MAX_DISTANCE, diffuse, specular;
-    point3 p, surface_normal, l, _l, ignore_me, r, rr;
+    double diffuse, specular;
+    point3 l, _l, r, rr;
     object_fill fill;
 
     color reflection_part;
     color refraction_part;
     /* might be a reflection ray, so check how many times we've bounced */
-    if (bounces_left < 0) {
+    if (bounces_left == 0) {
         SET_COLOR(object_color, 0.0, 0.0, 0.0);
         return 0;
     }
 
     /* check for intersection with a sphere or a rectangular */
-    t1 = ray_hit_object(e, d, t, MAX_DISTANCE, surface_normal, objects, &hit_object, last_object);
+    intersection ip = ray_hit_object(e, d, t, MAX_DISTANCE, objects, &hit_object);
    
     if (!hit_object)
         return 0;
-
-    /* p = e + t * d */
-    multiply_vector(d, t1, p);
-    add_vector(e, p, p);
 
     /* pick the fill of the object that was hit */
     fill = hit_object->element.fill;
@@ -253,57 +245,60 @@ static unsigned int ray_color(const point3 e, double t,
 
     for (light_node light = lights; light; light = light->next) {
         /* calculate the intersection vector pointing at the light */
-        subtract_vector(p, light->element.position, l);
+        subtract_vector(ip.point, light->element.position, l);
         multiply_vector(l, -1, _l);
         normalize(_l);
-        
+
         /* check for intersection with an object. use ignore_me
          * because we don't care about this normal
         */
-        ray_hit_object(p, _l, MIN_DISTANCE, length(l), ignore_me,
-                       objects, &light_hit_object, hit_object);
+        ray_hit_object(ip.point, _l, MIN_DISTANCE, length(l), 
+                       objects, &light_hit_object);
 
         /* the light was not block by itself(lit object) */
         if (light_hit_object)
             continue;
 
         compute_specular_and_diffuse(&diffuse, &specular, d, l,
-                                     surface_normal, fill.phong_power);
+                                     ip.normal, fill.phong_power);
 
         localColor(object_color, light->element.light_color,
                   diffuse, specular, &fill);
     }
 
-    reflection(r, d, surface_normal);
-    double idx = 1.0;
-    if (last_object)
-        idx = last_object->element.fill.index_of_refraction;
-    refraction(rr, d, surface_normal, idx, fill.index_of_refraction);
-    double R = fill.T>0.1? fresnel(d, rr, surface_normal, idx, fill.index_of_refraction): 1.0;
+    reflection(r, d, ip.normal);
+    double idx = idx_stack_top(stk).idx, idx_pass=fill.index_of_refraction;
+    if(idx_stack_top(stk).obj==hit_object) {
+        idx_stack_pop(stk);
+        idx_pass = idx_stack_top(stk).idx;
+    }else
+        idx_stack_push(stk, (idx_stack_element) {.obj=hit_object, .idx = fill.index_of_refraction});
+    
+    refraction(rr, d, ip.normal, idx, idx_pass);
+    double R = fill.T>0.1? fresnel(d, rr, ip.normal, idx, idx_pass): 1.0;
 
     /* totalColor = localColor + mix((1-fill.Kd)*fill.R*reflection, T*refraction, R) */
     if (fill.R > 0) {
         /* if we hit something, add the color
         * that's a result of that */
-        if (ray_color(p, MIN_DISTANCE , r, objects,
+        int old_top = stk->top;
+        if (ray_color(ip.point, MIN_DISTANCE , r, stk, objects,
                           lights, reflection_part,
-                          bounces_left - 1,
-                          hit_object)) {
-
+                          bounces_left - 1)) {
             multiply_vector(reflection_part, R*(1.0-fill.Kd)*fill.R,
                             reflection_part);
             add_vector(object_color, reflection_part,
                                object_color);
         }
+        stk->top = old_top;
     }
 
-
     /* calculate refraction ray */
-    if (fill.T > 0.0 && fill.index_of_refraction > 0.0) {
-
-        if (ray_color(p, MIN_DISTANCE, rr, objects,
+    if (length(rr)>0.0 && fill.T > 0.0 && fill.index_of_refraction > 0.0) {
+        normalize(rr);
+        if (ray_color(ip.point, MIN_DISTANCE, rr, stk, objects,
                           lights, refraction_part,
-                          bounces_left - 1, hit_object)) {
+                          bounces_left - 1)) {
             multiply_vector(refraction_part, (1.0-R)*fill.T,
                             refraction_part);
             add_vector(object_color, refraction_part,
@@ -327,18 +322,19 @@ void raytracing(uint8_t *pixels, color background_color,
     /* calculate u, v, w */
     calculateBasisVectors(u, v, w, view);
 
+    idx_stack stk;
+
     int factor=sqrt(SAMPLES);
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
             double r=0, g=0, b=0;
             for(int s=0; s < SAMPLES; s++) {
+                idx_stack_init(&stk);
                 rayConstruction(d, u, v, w, i*factor+s/factor, j*factor+s%factor, view, width*factor, height*factor);
                 normalize(d);
-                if (ray_color(view->vrp, 0.0, d, objects,
-
+                if (ray_color(view->vrp, 0.0, d, &stk, objects,
                               lights, object_color,
-                              MAX_REFLECTION_BOUNCES,
-                              NULL)) {
+                              MAX_REFLECTION_BOUNCES)) {
                     r += object_color[0];
                     g += object_color[1];
                     b += object_color[2];
@@ -347,10 +343,11 @@ void raytracing(uint8_t *pixels, color background_color,
                     g += background_color[1];
                     b += background_color[2];
                 }
+                pixels[((i + (j*width)) * 3) + 0] = r * 255 / SAMPLES;
+                pixels[((i + (j*width)) * 3) + 1] = g * 255 / SAMPLES;
+                pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
+
             }
-            pixels[((i + (j*width)) * 3) + 0] = r * 255 / SAMPLES;
-            pixels[((i + (j*width)) * 3) + 1] = g * 255 / SAMPLES;
-            pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
         }
     }
 }

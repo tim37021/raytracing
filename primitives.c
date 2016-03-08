@@ -5,12 +5,12 @@
 static int raySphereIntersection(const object *obj,
                                  const point3 ray_e,
                                  const point3 ray_d,
-                                 point3 surface_normal,
+                                 intersection *ip,
                                  double *t1);
 static int rayRectangularIntersection(const object *obj,
                                       const point3 ray_e,
                                       const point3 ray_d,
-                                      point3 surface_normal,
+                                      intersection *ip,
                                       double *t1);
 static void cloneSphere(const object *src, object *dest);
 static void cloneRectangular(const object *src, object *dest);
@@ -24,11 +24,11 @@ object_virtual_table vt_rectangular={.object_id=1, .rayIntersection=rayRectangul
 static int raySphereIntersection(const object *obj,
                                  const point3 ray_e,
                                  const point3 ray_d,
-                                 point3 surface_normal,
+                                 intersection *ip,
                                  double *t1)
 {
     const sphere *sph = (const sphere *)obj;
-    point3 l, p;
+    point3 l;
     subtract_vector(sph->center, ray_e, l);
 	double s = dot_product(l, ray_d);
 	double l2 = dot_product(l, l);
@@ -45,12 +45,14 @@ static int raySphereIntersection(const object *obj,
 	else
 		*t1 = s + q;
     // p=e+t1*d
-    multiply_vector(ray_d, *t1, p);
-    add_vector(ray_e, p, p);
+    multiply_vector(ray_d, *t1, ip->point);
+    add_vector(ray_e, ip->point, ip->point);
 
-    subtract_vector(p, sph->center, surface_normal);
-    normalize(surface_normal);
-
+    subtract_vector(ip->point, sph->center, ip->normal);
+    normalize(ip->normal);
+    if(dot_product(ip->normal, ray_d)>0.0)
+        multiply_vector(ip->normal, -1, ip->normal);
+      
 	return 1;
 }
 
@@ -68,7 +70,7 @@ static void cloneRectangular(const object *src, object *dest)
 static int rayRectangularIntersection(const object *obj,
                                       const point3 ray_e,
                                       const point3 ray_d,
-                                      point3 surface_normal,
+                                      intersection *ip,
                                       double *t1)
 {
     const rectangular *rec = (const rectangular *)obj;
@@ -108,7 +110,6 @@ static int rayRectangularIntersection(const object *obj,
 
     *t1 = inv_det * dot_product(e03, q);
 
-    point3 intersect;
     if(alpha + beta > 1.0f) {
         /* for the second triangle */
         point3 e23, e21;
@@ -144,7 +145,11 @@ static int rayRectangularIntersection(const object *obj,
     if(*t1 < 1e-4)
         return 0;
     
-    COPY_POINT3(surface_normal, rec->normal);
-    subtract_vector(intersect, ray_e, intersect);
+    COPY_POINT3(ip->normal, rec->normal);
+    if(dot_product(ip->normal, ray_d)>0.0)
+        multiply_vector(ip->normal, -1, ip->normal);
+    multiply_vector(ray_d, *t1, ip->point);
+    add_vector(ray_e, ip->point, ip->point);
+
     return 1;
 }

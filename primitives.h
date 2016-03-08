@@ -23,10 +23,12 @@ typedef struct {
 
 /* forward declare is necessary */
 struct _OBJECT;
+struct _INTERSECTION;
+typedef struct _INTERSECTION intersection;
 typedef struct _OBJECT object;
 typedef struct {
     void (*clone)(const object *this_ptr, object *target);
-    int (*rayIntersection)(const struct _OBJECT *this_ptr, const point3 ray_e, const point3 ray_d, point3 surface_normal, double *t);
+    int (*rayIntersection)(const struct _OBJECT *this_ptr, const point3 ray_e, const point3 ray_d, intersection *ip, double *t);
     /* though this is not a function pointer I put it here */
     int object_id;
     int private_data_size;
@@ -60,6 +62,11 @@ typedef struct {
     point3 vpn;
     point3 vup;
 } viewpoint;
+
+typedef struct _INTERSECTION{
+    point3 point;
+    point3 normal;
+} intersection;
 
 #define COPY_OBJECT_FILL(a,b)	{ (a).fill_color[0] = (b).fill_color[0]; \
 	(a).fill_color[1] = (b).fill_color[1]; \
