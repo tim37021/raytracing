@@ -40,15 +40,15 @@ typedef struct _OBJECT{
     char private_data[];
 } object;
 
+extern object_virtual_table vt_sphere;
+extern object_virtual_table vt_rectangular;
+
 typedef struct {
     object_virtual_table *vt;
     object_fill fill;
     point3 center;
     double radius;
 } sphere;
-
-extern object_virtual_table vt_sphere;
-extern object_virtual_table vt_rectangular;
 
 typedef struct {
     object_virtual_table *vt;
