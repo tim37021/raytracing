@@ -9,7 +9,7 @@
 #define MAX_REFLECTION_BOUNCES	3
 #define MAX_DISTANCE 1000000000000.0
 #define MIN_DISTANCE 0.00001
-#define SAMPLES 4
+#define SAMPLES 1
 
 #define SQUARE(x) (x * x)
 #define MAX(a, b) (a > b ? a : b)
@@ -348,6 +348,7 @@ void raytracing(uint8_t *pixels, color background_color,
                 pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
 
             }
+            printf("%d %d\n", i, j);
         }
     }
 }

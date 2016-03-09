@@ -1,6 +1,7 @@
 #include "primitives.h"
 #include "math-toolkit.h"
 #include <string.h>
+#include <stdlib.h>
 
 static int raySphereIntersection(const object *obj,
                                  const point3 ray_e,
@@ -17,14 +18,22 @@ static int rayTriangleIntersection(const object *obj,
                                       const point3 ray_d,
                                       intersection *ip,
                                       double *t1);
+static int rayTriangleMeshIntersection(const object *obj,
+                                      const point3 ray_e,
+                                      const point3 ray_d,
+                                      intersection *ip,
+                                      double *t1);
 static void cloneSphere(const object *src, object *dest);
 static void cloneRectangle(const object *src, object *dest);
 static void cloneTriangle(const object *src, object *dest);
+static void cloneTriangleMesh(const object *src, object *dest);
 static void emptyRelease(const object *src);
+static void releaseTriangleMesh(const object *src);
 
 object_virtual_table vt_sphere={.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .release=emptyRelease, .private_data_size = sizeof(sphere)-sizeof(object)};
 object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=cloneRectangle, .release=emptyRelease, .private_data_size = sizeof(rectangle)-sizeof(object)};
 object_virtual_table vt_triangle={.object_id=2, .rayIntersection=rayTriangleIntersection, .clone=cloneTriangle, .release=emptyRelease, .private_data_size = sizeof(triangle)-sizeof(object)};
+object_virtual_table vt_triangle_mesh={.object_id=3, .rayIntersection=rayTriangleMeshIntersection, .clone=cloneTriangleMesh, .release=releaseTriangleMesh, .private_data_size = sizeof(triangle_mesh)-sizeof(object)};
 
 /* @param t t distance
  * @return 1 means hit, otherwise 0
@@ -211,6 +220,28 @@ static int rayTriangleIntersection(const object *obj,
     return 1;
 }
 
+static int rayTriangleMeshIntersection(const object *obj,
+                                      const point3 ray_e,
+                                      const point3 ray_d,
+                                      intersection *ip,
+                                      double *t1)
+{
+    const triangle_mesh *tri_mesh = (const triangle_mesh *)obj;
+    int i;
+    double nearest = 1000000000.0;
+    intersection iptmp;
+    int hit = 0;
+    for(i=0; i<tri_mesh->n; i++) {
+        if(rayTriangleIntersection((const object *)((unsigned char *)&tri_mesh->vertices[i*3]-sizeof(object)), ray_e, ray_d, &iptmp, t1) && *t1<nearest) {
+            *ip = iptmp;
+            nearest = *t1;
+            hit = 1;
+        }
+    }
+    *t1 = nearest;
+    return hit;
+}
+
 static void cloneSphere(const object *src, object *dest)
 {
     memcpy(dest, src, sizeof(sphere));
@@ -226,7 +257,32 @@ static void cloneTriangle(const object *src, object *dest)
     memcpy(dest, src, sizeof(triangle));
 }
 
+static void cloneTriangleMesh(const object *src, object *dest)
+{
+    memcpy(dest, src, sizeof(triangle_mesh));
+}
+
 static void emptyRelease(const object *src)
 {
-    
+
+}
+
+static void releaseTriangleMesh(const object *src)
+{
+    const triangle_mesh *tri_mesh = (const triangle_mesh *)src;
+    free(tri_mesh->vertices);
+    free(tri_mesh->normals);
+}
+
+triangle_mesh newTriangleMesh(int n, point3 *vertex_list, point3 *normal_list, object_fill fill)
+{
+    triangle_mesh result;
+    result.vertices = malloc(sizeof(point3) * n * 3);
+    memcpy(result.vertices, vertex_list, sizeof(point3) * n * 3);
+    result.normals = malloc(sizeof(point3) * n * 3);
+    memcpy(result.normals, normal_list, sizeof(point3) * n * 3);
+    result.n = n;
+    result.fill = fill;
+    result.vt = &vt_triangle_mesh;
+    return result;
 }

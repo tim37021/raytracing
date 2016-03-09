@@ -66,6 +66,17 @@ typedef struct {
 } triangle;
 
 typedef struct {
+    object_virtual_table *vt;
+    object_fill fill;
+    /* number of tris */
+    int n;
+    point3 *vertices;
+    point3 *normals;
+} triangle_mesh;
+
+triangle_mesh newTriangleMesh(int n, point3 *vertex_list, point3 *normal_list, object_fill fill);
+
+typedef struct {
     point3 vrp;
     point3 vpn;
     point3 vup;
