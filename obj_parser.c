@@ -402,7 +402,10 @@ int obj_parse_obj_file(obj_growable_scene_data *growable_data, const char *filen
 		
 		else if( strequal(current_token, "mtllib") ) // mtllib
 		{
-			strncpy(growable_data->material_filename, strtok(NULL, WHITESPACE), OBJ_FILENAME_LENGTH);
+			char *p=strrchr(filename, '/');
+			int path_len=p?p-filename+1: 0;
+			strncpy(growable_data->material_filename, filename, path_len);
+			strncpy(growable_data->material_filename+path_len, strtok(NULL, WHITESPACE), OBJ_FILENAME_LENGTH-path_len);
 			obj_parse_mtl_file(growable_data->material_filename, &growable_data->material_list);
 			continue;
 		}
