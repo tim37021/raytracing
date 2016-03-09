@@ -42,6 +42,7 @@ typedef struct _OBJECT{
 
 extern object_virtual_table vt_sphere;
 extern object_virtual_table vt_rectangle;
+extern object_virtual_table vt_triangle;
 
 typedef struct {
     object_virtual_table *vt;
