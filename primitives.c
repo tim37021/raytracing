@@ -13,10 +13,10 @@ static int rayRectangleIntersection(const object *obj,
                                       intersection *ip,
                                       double *t1);
 static void cloneSphere(const object *src, object *dest);
-static void clonerectangle(const object *src, object *dest);
+static void cloneRectangle(const object *src, object *dest);
 
 object_virtual_table vt_sphere={.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .private_data_size = sizeof(sphere)-sizeof(object)};
-object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=clonerectangle, .private_data_size = sizeof(rectangle)-sizeof(object)};
+object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=cloneRectangle, .private_data_size = sizeof(rectangle)-sizeof(object)};
 
 /* @param t t distance
  * @return 1 means hit, otherwise 0
@@ -61,7 +61,7 @@ static void cloneSphere(const object *src, object *dest)
     memcpy(dest, src, sizeof(sphere));
 }
 
-static void clonerectangle(const object *src, object *dest)
+static void cloneRectangle(const object *src, object *dest)
 {
     memcpy(dest, src, sizeof(rectangle));
 }
