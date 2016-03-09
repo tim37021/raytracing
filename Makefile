@@ -1,12 +1,14 @@
 EXEC = raytracing
+LIB_OBJ_PARSER = obj_parser
 .PHONY: all
 all: $(EXEC)
 
 CC ?= gcc
+AR ?= ar
 CFLAGS = \
 	-std=c99 -Wall -O0 -g
 LDFLAGS = \
-	-lm
+	-L. -lm -l$(LIB_OBJ_PARSER)
 	
 ifeq ($(PROFILE),1)
 PROF_FLAGS = -pg
@@ -21,12 +23,19 @@ OBJS := \
 	primitives.o \
 	main.o
 
+OBJS_OBJPARSER := \
+	obj_parser.o \
+	list.o \
+	string_extra.o
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(EXEC): $(OBJS) lib$(LIB_OBJ_PARSER).a
+	$(CC) -o $@ $(OBJS) $(LDFLAGS) 
 
-$(EXEC): $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+lib$(LIB_OBJ_PARSER).a: $(OBJS_OBJPARSER)
+	$(AR) rcs $@ $^
 
 main.c: use-models.h
 use-models.h: models.inc Makefile
@@ -51,5 +60,5 @@ use-models.h: models.inc Makefile
 	        -e 's/ = {//g' >> use-models.h
 
 clean:
-	$(RM) $(EXEC) $(OBJS) use-models.h \
+	$(RM) $(EXEC) lib$(LIB_OBJ_PARSER).a $(OBJS) $(OBJS_OBJPARSER) use-models.h \
 		out.ppm gmon.out
