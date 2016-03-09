@@ -56,7 +56,7 @@ viewpoint view = {
 
 
 static
-rectangular rectangular1 = {
+rectangle rectangle1 = {
     .vertices = {
         { 0.0, 0.0, 0.0 },	/* v0 */
         { 0.0, 0.0, 20.0 },	/* v1 */
@@ -72,7 +72,7 @@ rectangular rectangular1 = {
 };
 
 static
-rectangular rectangular2 = {
+rectangle rectangle2 = {
     .vertices = {
         { 0.0, 0.0, 0.0 },	/* v0 */
         { 20.0, 0.0, 0.0 },	/* v1 */
@@ -90,7 +90,7 @@ rectangular rectangular2 = {
 
 
 static
-rectangular rectangular3 = {
+rectangle rectangle3 = {
     .vertices = {
         { 0.0, 0.0, 0.0 },	/* v0 */
         { 0.0, 20.0, 0.0 },	/* v1 */

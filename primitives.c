@@ -7,16 +7,16 @@ static int raySphereIntersection(const object *obj,
                                  const point3 ray_d,
                                  intersection *ip,
                                  double *t1);
-static int rayRectangularIntersection(const object *obj,
+static int rayrectangleIntersection(const object *obj,
                                       const point3 ray_e,
                                       const point3 ray_d,
                                       intersection *ip,
                                       double *t1);
 static void cloneSphere(const object *src, object *dest);
-static void cloneRectangular(const object *src, object *dest);
+static void clonerectangle(const object *src, object *dest);
 
 object_virtual_table vt_sphere={.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .private_data_size = sizeof(sphere)-sizeof(object)};
-object_virtual_table vt_rectangular={.object_id=1, .rayIntersection=rayRectangularIntersection, .clone=cloneRectangular, .private_data_size = sizeof(rectangular)-sizeof(object)};
+object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayrectangleIntersection, .clone=clonerectangle, .private_data_size = sizeof(rectangle)-sizeof(object)};
 
 /* @param t t distance
  * @return 1 means hit, otherwise 0
@@ -61,19 +61,19 @@ static void cloneSphere(const object *src, object *dest)
     memcpy(dest, src, sizeof(sphere));
 }
 
-static void cloneRectangular(const object *src, object *dest)
+static void clonerectangle(const object *src, object *dest)
 {
-    memcpy(dest, src, sizeof(rectangular));
+    memcpy(dest, src, sizeof(rectangle));
 }
 
 /* @return 1 means hit, otherwise 0; */
-static int rayRectangularIntersection(const object *obj,
+static int rayrectangleIntersection(const object *obj,
                                       const point3 ray_e,
                                       const point3 ray_d,
                                       intersection *ip,
                                       double *t1)
 {
-    const rectangular *rec = (const rectangular *)obj;
+    const rectangle *rec = (const rectangle *)obj;
 
     point3 e01, e03, p;
     subtract_vector(rec->vertices[1], rec->vertices[0], e01);

@@ -41,7 +41,7 @@ typedef struct _OBJECT{
 } object;
 
 extern object_virtual_table vt_sphere;
-extern object_virtual_table vt_rectangular;
+extern object_virtual_table vt_rectangle;
 
 typedef struct {
     object_virtual_table *vt;
@@ -55,7 +55,7 @@ typedef struct {
     object_fill fill;
     point3 vertices[4];
     point3 normal;
-} rectangular;
+} rectangle;
 
 typedef struct {
     point3 vrp;
