@@ -142,7 +142,8 @@ static int rayRectangleIntersection(const object *obj,
     if(*t1 < 1e-4)
         return 0;
     
-    COPY_POINT3(ip->normal, rec->normal);
+    cross_product(e01, e03, ip->normal);
+    normalize(ip->normal);
     if(dot_product(ip->normal, ray_d)>0.0)
         multiply_vector(ip->normal, -1, ip->normal);
     multiply_vector(ray_d, *t1, ip->point);
@@ -199,7 +200,8 @@ static int rayTriangleIntersection(const object *obj,
     if(*t1 < 1e-4)
         return 0;
     
-    COPY_POINT3(ip->normal, tri->normal);
+    cross_product(e01, e02, ip->normal);
+    normalize(ip->normal);
     if(dot_product(ip->normal, ray_d)>0.0)
         multiply_vector(ip->normal, -1, ip->normal);
     multiply_vector(ray_d, *t1, ip->point);

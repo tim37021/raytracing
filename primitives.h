@@ -55,14 +55,12 @@ typedef struct {
     object_virtual_table *vt;
     object_fill fill;
     point3 vertices[4];
-    point3 normal;
 } rectangle;
 
 typedef struct {
     object_virtual_table *vt;
     object_fill fill;
     point3 vertices[3];
-    point3 normal;
 } triangle;
 
 typedef struct {
