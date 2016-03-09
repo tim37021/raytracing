@@ -68,16 +68,6 @@ typedef struct _INTERSECTION{
     point3 normal;
 } intersection;
 
-#define COPY_OBJECT_FILL(a,b)	{ (a).fill_color[0] = (b).fill_color[0]; \
-	(a).fill_color[1] = (b).fill_color[1]; \
-	(a).fill_color[2] = (b).fill_color[2]; \
-	(a).Kd = (b).Kd; \
-	(a).Ks = (b).Ks; \
-    (a).R  = (b).R;  \
-	(a).phong_power = (b).phong_power; \
-	(a).T = (b).T; \
-	(a).index_of_refraction = (b).index_of_refraction; }
-
 #define COPY_POINT3(a,b)	{ (a)[0] = (b)[0]; \
 	(a)[1] = (b)[1]; \
 	(a)[2] = (b)[2]; }
