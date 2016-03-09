@@ -102,3 +102,8 @@ rectangle rectangle3 = {
     },
 };
 
+/* The following will be preprocessed by Makefile, they are "not only" comments */
+/*
+LOAD_OBJ_SCENE test.obj {0,0,0} {0,0,0} {1,1,1}
+LOAD_OBJ_SCENE test.obj {0,0,0} {0,0,0} {1,1,3}
+*/

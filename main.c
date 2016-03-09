@@ -4,6 +4,7 @@
 
 #include "primitives.h"
 #include "raytracing.h"
+#include "obj_parser.h"
 
 #define OUT_FILENAME "out.ppm"
 
@@ -15,6 +16,20 @@ static void write_to_ppm(FILE *outfile, uint8_t *pixels,
 {
     fprintf(outfile, "P6\n%d %d\n%d\n", width, height, 255);
     fwrite(pixels, 1, height * width * 3, outfile);
+}
+
+static int load_obj_scene(const char *filename, point3 translate, point3 rotate, point3 scale)
+{
+    obj_scene_data data;
+    if( !parse_obj_scene(&data, filename) )
+        return 0;
+
+    printf("# Loading scene %s...", filename);
+
+
+
+    printf("OK\n");
+    return 1;
 }
 
 int main()

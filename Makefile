@@ -48,6 +48,8 @@ use-models.h: models.inc Makefile
 			-e 's/^triangle //g'\
 			-e 's/triangle[0-9]/&.vt=\&vt_triangle;/g' \
 			-e 's/ = {//g' >> use-models.h
+	@egrep "^(LOAD_OBJ_SCENE) " models.inc | sed -e 's/LOAD_OBJ_SCENE /load_obj_scene("/g' -e 's/ {/" {/' | \
+		awk '{print $$1", (double *)&(obj_vector){.e="$$2"}, (double *)&(obj_vector){.e="$$3"}, (double *)&(obj_vector){.e="$$4"});"}' >> use-models.h
 	@egrep "^(light|sphere|rectangle|triangle) " models.inc | \
 	    sed -e 's/^light /append_light/g' \
 	        -e 's/light[0-9]/(\&&, \&lights);/g' \
