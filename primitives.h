@@ -29,6 +29,8 @@ typedef struct _OBJECT object;
 typedef struct {
     void (*clone)(const object *this_ptr, object *target);
     int (*rayIntersection)(const struct _OBJECT *this_ptr, const point3 ray_e, const point3 ray_d, intersection *ip, double *t);
+    /* desctuctor */
+    void (*release)();
     /* though this is not a function pointer I put it here */
     int object_id;
     int private_data_size;

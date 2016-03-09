@@ -4,16 +4,6 @@
 #include "primitives.h"
 #include "objects.h"
 
-#define GEN_DELETE_FUNC(name)   \
-void delete_##name##_list(name##_node *list) \
-{ \
-    while(*list) { \
-        name##_node nextNode= (*list)->next; \
-        free(*list); \
-        *list = nextNode; \
-    } \
-}
-
 void append_object(const object *X, object_node *list)
 {
     object_node newNode = malloc(sizeof(object_node_body)+X->vt->private_data_size);
@@ -29,8 +19,6 @@ void append_object(const object *X, object_node *list)
         p->next = newNode;
     }
 }
-
-GEN_DELETE_FUNC(object);
 
 void append_light(const light *X, light_node *list)
 {
@@ -48,9 +36,24 @@ void append_light(const light *X, light_node *list)
     }
 }
 
-GEN_DELETE_FUNC(light);
+void delete_light_list(light_node *list) 
+{ 
+    while(*list) { 
+        light_node nextNode= (*list)->next; 
+        free(*list); 
+        *list = nextNode; 
+    } 
+}
 
-
-
+void delete_object_list(object_node *list) 
+{ 
+    while(*list) { 
+        object_node nextNode= (*list)->next; 
+        /* release private data */ 
+        (*list)->element.vt->release(&(*list)->element); 
+        free(*list); 
+        *list = nextNode; 
+    } 
+}
 
 // *INDENT-ON*

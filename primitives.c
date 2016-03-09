@@ -20,10 +20,11 @@ static int rayTriangleIntersection(const object *obj,
 static void cloneSphere(const object *src, object *dest);
 static void cloneRectangle(const object *src, object *dest);
 static void cloneTriangle(const object *src, object *dest);
+static void emptyRelease(const object *src);
 
-object_virtual_table vt_sphere={.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .private_data_size = sizeof(sphere)-sizeof(object)};
-object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=cloneRectangle, .private_data_size = sizeof(rectangle)-sizeof(object)};
-object_virtual_table vt_triangle={.object_id=2, .rayIntersection=rayTriangleIntersection, .clone=cloneTriangle, .private_data_size = sizeof(triangle)-sizeof(object)};
+object_virtual_table vt_sphere={.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .release=emptyRelease, .private_data_size = sizeof(sphere)-sizeof(object)};
+object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=cloneRectangle, .release=emptyRelease, .private_data_size = sizeof(rectangle)-sizeof(object)};
+object_virtual_table vt_triangle={.object_id=2, .rayIntersection=rayTriangleIntersection, .clone=cloneTriangle, .release=emptyRelease, .private_data_size = sizeof(triangle)-sizeof(object)};
 
 /* @param t t distance
  * @return 1 means hit, otherwise 0
@@ -223,4 +224,9 @@ static void cloneRectangle(const object *src, object *dest)
 static void cloneTriangle(const object *src, object *dest)
 {
     memcpy(dest, src, sizeof(triangle));
+}
+
+static void emptyRelease(const object *src)
+{
+    
 }
