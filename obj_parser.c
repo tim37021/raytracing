@@ -190,7 +190,7 @@ int obj_parse_mtl_file(const char *filename, list *material_list)
 	mtl_file_stream = fopen( filename, "r");
 	if(mtl_file_stream == 0)
 	{
-		fprintf(stderr, "Error reading file: %s\n", filename);
+		printf("Error reading file: %s\n", filename);
 		return 0;
 	}
 		
@@ -277,7 +277,7 @@ int obj_parse_mtl_file(const char *filename, list *material_list)
 		}
 		else
 		{
-			fprintf(stderr, "Unknown command '%s' in material file %s at line %i:\n\t%s\n",
+			printf("Unknown command '%s' in material file %s at line %i:\n\t%s\n",
 					current_token, filename, line_number, current_line);
 			//return 0;
 		}
@@ -300,7 +300,7 @@ int obj_parse_obj_file(obj_growable_scene_data *growable_data, const char *filen
 	obj_file_stream = fopen( filename, "r");
 	if(obj_file_stream == 0)
 	{
-		fprintf(stderr, "Error reading file: %s\n", filename);
+		printf("Error reading file: %s\n", filename);
 		return 0;
 	}
 
