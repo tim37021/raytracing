@@ -31,13 +31,6 @@ static int load_obj_scene(const char *filename, point3 translate, point3 rotate,
         printf("Failed\n");
         return 0;
     }
-    printf("Number of vertices: %i\n", data.vertex_count);
-    printf("Number of vertex normals: %i\n", data.vertex_normal_count);
-    printf("Number of texture coordinates: %i\n", data.vertex_texture_count);
-    printf("\n");
-
-    printf("Number of faces: %i\n", data.face_count);
-
     obj_material *mtl;
     for(int i=0; i<data.face_count; i++)
     {

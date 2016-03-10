@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "math-toolkit.h"
 #include "primitives.h"
@@ -324,6 +325,8 @@ void raytracing(uint8_t *pixels, color background_color,
 
     idx_stack stk;
 
+    char percent[16]="0.00%", percent2[16]="0.0%";
+    char *cur_percent=percent, *last_percent=percent2;
     int factor=sqrt(SAMPLES);
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
@@ -346,9 +349,14 @@ void raytracing(uint8_t *pixels, color background_color,
                 pixels[((i + (j*width)) * 3) + 0] = r * 255 / SAMPLES;
                 pixels[((i + (j*width)) * 3) + 1] = g * 255 / SAMPLES;
                 pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
-
             }
-            printf("%d %d\n", i, j);
+            sprintf(cur_percent, "%.0f%%", (float)(j*width+i) / (width * height) * 100);
+            if(strcmp(cur_percent, last_percent)!=0){
+            	  printf("%s\n", cur_percent);
+            	  char *tmp_p = cur_percent;
+            	  cur_percent = last_percent;
+            	  last_percent = tmp_p;
+            }
         }
     }
 }
