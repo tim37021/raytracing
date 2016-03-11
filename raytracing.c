@@ -352,7 +352,8 @@ void raytracing(uint8_t *pixels, color background_color,
             }
             sprintf(cur_percent, "%.0f%%", (float)(j*width+i) / (width * height) * 100);
             if(strcmp(cur_percent, last_percent)!=0){
-            	  printf("%s\n", cur_percent);
+                  printf("\r[ %3s ]", cur_percent);
+                  fflush(stdout);
             	  char *tmp_p = cur_percent;
             	  cur_percent = last_percent;
             	  last_percent = tmp_p;

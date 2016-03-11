@@ -84,6 +84,6 @@ int main()
 
     delete_object_list(&objects);
     delete_light_list(&lights);
-    printf("Done!\n");
+    printf("\nDone!\n");
     return 0;
 }
