@@ -205,13 +205,6 @@ static void calculateBasisVectors(point3 u, point3 v, point3 w,
     normalize(v);
 }
 
-/* @brief protect color value overflow */
-static void protect_color_overflow(color c)
-{
-    for (int i = 0; i < 3; i++)
-        if (c[i] > 1.0) c[i] = 1.0;
-}
-
 static unsigned int ray_color(const point3 e, double t,
                               const point3 d,
                               idx_stack *stk,
@@ -306,8 +299,6 @@ static unsigned int ray_color(const point3 e, double t,
                            object_color);
         }
     }
-    
-    protect_color_overflow(object_color);
     return 1;
 }
 
@@ -338,6 +329,7 @@ void raytracing(uint8_t *pixels, color background_color,
                 if (ray_color(view->vrp, 0.0, d, &stk, objects,
                               lights, object_color,
                               MAX_REFLECTION_BOUNCES)) {
+                    clamp(object_color);
                     r += object_color[0];
                     g += object_color[1];
                     b += object_color[2];

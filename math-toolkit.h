@@ -83,4 +83,12 @@ double scalar_triple(const double *u, const double *v, const double *w)
     return dot_product(v, tmp);
 }
 
+/* @brief protect color value overflow */
+static inline
+void clamp(double *c)
+{
+    for (int i = 0; i < 3; i++)
+        if (c[i] > 1.0) c[i] = 1.0;
+}
+
 #endif
