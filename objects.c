@@ -7,7 +7,7 @@
 void append_object(const object *X, object_node *list)
 {
     object_node newNode = malloc(sizeof(object_node_body)+X->vt->private_data_size);
-    X->vt->clone(X, &newNode->element);
+    INVOKE_VIRTUAL_FUNC(*X, clone, &newNode->element);
     newNode->next = NULL;
     if(!*list)
         *list = newNode;
@@ -50,7 +50,7 @@ void delete_object_list(object_node *list)
     while(*list) { 
         object_node nextNode= (*list)->next; 
         /* release private data */ 
-        (*list)->element.vt->release(&(*list)->element); 
+        INVOKE_VIRTUAL_FUNC((*list)->element, release);
         free(*list); 
         *list = nextNode; 
     } 

@@ -142,7 +142,7 @@ static intersection ray_hit_object(const point3 e, const point3 d,
     *hit_object=NULL;
 
     for (object_node obj = objects; obj; obj = obj->next) {
-        if (obj->element.vt->rayIntersection(&(obj->element), biased_e, d, &tmpresult,
+        if (INVOKE_VIRTUAL_FUNC(obj->element, rayIntersection, biased_e, d, &tmpresult,
                                        &t1) && t1<nearest) {
             /* hit is closest so far */
             *hit_object = obj;
