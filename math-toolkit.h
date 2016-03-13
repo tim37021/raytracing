@@ -91,4 +91,67 @@ void clamp(double *c)
         if (c[i] > 1.0) c[i] = 1.0;
 }
 
+static inline
+void scalar_matrix(const double *scalar, double *v)
+{
+   v[0] = scalar[0]; v[1] = 0; v[2] = 0.0;
+   v[3] = 0.0; v[4] = scalar[1]; v[5] = 0.0;
+   v[6] = 0.0; v[7] = 0.0; v[8] = scalar[2];
+}
+
+
+static inline
+void identity_matrix(double *v)
+{
+    scalar_matrix((double [3]) {1.0, 1.0, 1.0}, v);
+}
+
+static inline
+void rotation_matrix_x(double t, double *v)
+{
+   v[0] = 1.0; v[1] = 0; v[2] = 0.0;
+   v[3] = 0.0; v[4] = cos(-t); v[5] = -sin(-t);
+   v[6] = 0.0; v[7] = sin(-t); v[8] = cos(-t);
+}
+
+static inline
+void rotation_matrix_y(double t, double *v)
+{
+   v[0] = cos(-t); v[1] = 0; v[2] = sin(-t);
+   v[3] = 0.0; v[4] = 1.0; v[5] = 0.0;
+   v[6] = -sin(-t); v[7] = 0.0; v[8] = cos(-t);
+}
+
+static inline
+void rotation_matrix_z(double t, double *v)
+{
+   v[0] = cos(-t); v[1] = -sin(-t); v[2] = 0.0;
+   v[3] = sin(-t); v[4] = cos(-t); v[5] = 0.0;
+   v[6] = 0.0; v[7] = 0.0; v[8] = 1.0;
+}
+
+/* NOTE: out can't be overlap with u or v */
+static inline
+void multiply_mat3(const double *u, const double *v, double *out)
+{
+    out[0] = u[0] * v[0] + u[1] * v[3] + u[2] * v[6];
+    out[1] = u[0] * v[1] + u[1] * v[4] + u[2] * v[7];
+    out[2] = u[0] * v[2] + u[1] * v[5] + u[2] * v[8];
+    out[3] = u[3] * v[0] + u[4] * v[3] + u[5] * v[6];
+    out[4] = u[3] * v[1] + u[4] * v[4] + u[5] * v[7];
+    out[5] = u[3] * v[2] + u[4] * v[5] + u[5] * v[8];
+    out[6] = u[6] * v[0] + u[7] * v[3] + u[8] * v[6];
+    out[7] = u[6] * v[1] + u[7] * v[4] + u[8] * v[7];
+    out[8] = u[6] * v[2] + u[7] * v[5] + u[8] * v[8];
+}
+
+/* NOTE: out can't be overlap with v */
+static inline
+void multiply_mat3_vector(const double *M, const double *v, double *out)
+{
+    out[0] = M[0] * v[0] + M[1] * v[1] + M[2] * v[2];
+    out[1] = M[3] * v[0] + M[4] * v[1] + M[5] * v[2];
+    out[2] = M[6] * v[0] + M[7] * v[1] + M[8] * v[2];
+}
+
 #endif

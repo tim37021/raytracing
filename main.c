@@ -20,6 +20,17 @@ static void write_to_ppm(FILE *outfile, uint8_t *pixels,
     fwrite(pixels, 1, height * width * 3, outfile);
 }
 
+static inline
+void build_rotation_matrix(const double *rotation, double *out)
+{
+    mat3 tmp, tmp2;
+    rotation_matrix_x(rotation[0], out);
+    rotation_matrix_y(rotation[1], tmp);
+    multiply_mat3(tmp, out, tmp2);
+    rotation_matrix_z(rotation[2], tmp);
+    multiply_mat3(tmp, tmp2, out);
+}
+
 static int load_obj_scene(const char *filename, point3 translate, point3 rotate, point3 scale, object_node *objects)
 {
     static point3 tmp1[MAX_VERTICES],  tmp2[MAX_VERTICES];
@@ -31,14 +42,24 @@ static int load_obj_scene(const char *filename, point3 translate, point3 rotate,
         printf("Failed\n");
         return 0;
     }
+
+    mat3 rotate_mat;
+    build_rotation_matrix(rotate, rotate_mat);
+    mat3 rotate_scale_mat, scale_matrix;
+    scalar_matrix(scale, scale_matrix);
+    multiply_mat3(rotate_mat, scale_matrix, rotate_scale_mat);
+
     obj_material *mtl;
     for(int i=0; i<data.face_count; i++)
     {
         obj_face *o = data.face_list[i];
         for(int j=0; j<3; j++)
         {
-            COPY_POINT3(tmp1[i*3+j], data.vertex_list[ o->vertex_index[j]]->e);
-            COPY_POINT3(tmp2[i*3+j], data.vertex_normal_list[ o->normal_index[j]]->e);
+            multiply_mat3_vector(rotate_scale_mat, data.vertex_list[ o->vertex_index[j]]->e, tmp1[i*3+j]);
+            tmp1[i*3+j][0] += translate[0];
+            tmp1[i*3+j][1] += translate[1];
+            tmp1[i*3+j][2] += translate[2];
+            multiply_mat3_vector(rotate_mat, data.vertex_normal_list[ o->normal_index[j]]->e, tmp2[i*3+j]);
         }
         mtl = data.material_list[o->material_index];
     }

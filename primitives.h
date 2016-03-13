@@ -4,6 +4,7 @@
 typedef double point3[3];
 typedef double point4[3];
 typedef double color[3];
+typedef double mat3[9];
 
 typedef struct {
     color light_color; /**< scale (0,1) */
@@ -98,5 +99,12 @@ typedef struct _INTERSECTION{
 #define SET_COLOR(r,R,G,B)	{ (r)[0] = (R); \
 	(r)[1] = (G); \
 	(r)[2] = (B); }
+
+#define COPY_MAT3(a, b)  \
+    { \
+        int i; \
+        for(i=0; i<9; i++) \
+            a[i]=b[i]; \
+    }
 
 #endif
