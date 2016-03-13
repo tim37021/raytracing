@@ -196,11 +196,11 @@ static void calculateBasisVectors(point3 u, point3 v, point3 w,
     normalize(w);
 
     /* u = (t x w) / (|t x w|) */
-    cross_product(w, view->vup, u);
+    cross_product(view->vup, w, u);
     normalize(u);
 
     /* v = w x u */
-    cross_product(u, w, v);
+    cross_product(w, u, v);
 
     normalize(v);
 }
