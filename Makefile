@@ -37,7 +37,7 @@ $(EXEC): $(OBJS) lib$(LIB_OBJ_PARSER).a
 lib$(LIB_OBJ_PARSER).a: $(OBJS_OBJPARSER)
 	$(AR) rcs $@ $^
 
-main.c: use-models.h
+main.o: use-models.h
 use-models.h: models.inc Makefile
 	@echo '#include "models.inc"' > use-models.h
 	@egrep "^(sphere|rectangle|triangle) " models.inc | \
