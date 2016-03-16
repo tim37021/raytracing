@@ -80,6 +80,12 @@ static int load_obj_scene(const char *filename, point3 translate, point3 rotate,
     return 1;
 }
 
+void progrss_report(float percent)
+{
+    printf("\r[ %.0f%% ]", percent);
+    fflush(stdout);
+}
+
 int main()
 {
     uint8_t *pixels;
@@ -96,7 +102,7 @@ int main()
     printf("# Rendering scene\n");
     /* do the ray tracing with the given geometry */
     raytracing(pixels, background,
-               objects, lights, &view, ROWS, COLS);
+               objects, lights, &view, ROWS, COLS, progrss_report);
     {
         FILE *outfile = fopen(OUT_FILENAME, "wb");
         write_to_ppm(outfile, pixels, ROWS, COLS);

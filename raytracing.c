@@ -306,7 +306,7 @@ static unsigned int ray_color(const point3 e, double t,
 void raytracing(uint8_t *pixels, color background_color,
                 object_node objects, light_node lights, 
                 const viewpoint *view,
-                int width, int height)
+                int width, int height, event_progress_change event_progress)
 {
     point3 u, v, w, d;
     color object_color = { 0.0, 0.0, 0.0 };
@@ -316,8 +316,7 @@ void raytracing(uint8_t *pixels, color background_color,
 
     idx_stack stk;
 
-    char percent[16]="0.00%", percent2[16]="0.0%";
-    char *cur_percent=percent, *last_percent=percent2;
+    float cur_percent=0.0, last_percent=0.0;
     int factor=sqrt(SAMPLES);
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
@@ -342,11 +341,11 @@ void raytracing(uint8_t *pixels, color background_color,
                 pixels[((i + (j*width)) * 3) + 1] = g * 255 / SAMPLES;
                 pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
             }
-            sprintf(cur_percent, "%.0f%%", (float)(j*width+i) / (width * height) * 100);
-            if(strcmp(cur_percent, last_percent)!=0){
-                  printf("\r[ %3s ]", cur_percent);
-                  fflush(stdout);
-            	  char *tmp_p = cur_percent;
+            cur_percent=(float)(j*width+i) / (width * height) * 100;
+            if(cur_percent - last_percent > 1.0f){
+                 if(event_progress)
+                 	event_progress((float)(j*width+i) / (width * height) * 100);
+            	  float tmp_p = cur_percent;
             	  cur_percent = last_percent;
             	  last_percent = tmp_p;
             }
