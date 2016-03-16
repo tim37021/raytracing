@@ -342,10 +342,10 @@ void raytracing(uint8_t *pixels, color background_color,
                 pixels[((i + (j*width)) * 3) + 1] = g * 255 / SAMPLES;
                 pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
             }
-            cur_percent=(float)(j*width+i) / (width * height) * 100;
+            cur_percent=(float)((j+1)*width+(i+1)) / (width * height) * 100;
             if(cur_percent - last_percent > 1.0f){
                  if(event_progress)
-                 	if(!event_progress((float)(j*width+i) / (width * height) * 100))
+                 	if(!event_progress(cur_percent))
                  		return;
             	  SWAP(float, last_percent, cur_percent);
             }
