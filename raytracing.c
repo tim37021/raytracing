@@ -128,9 +128,9 @@ static double fresnel(const point3 r, const point3 l, const point3 normal, doubl
 
 /* @param t distance */
 static intersection ray_hit_object(const point3 e, const point3 d,
-                             double t0, double t1,
-                             const object_node objects,
-                             object_node *hit_object)
+                                   double t0, double t1,
+                                   const object_node objects,
+                                   object_node *hit_object)
 {
 
     point3 biased_e;
@@ -144,7 +144,7 @@ static intersection ray_hit_object(const point3 e, const point3 d,
 
     for (object_node obj = objects; obj; obj = obj->next) {
         if (INVOKE_VIRTUAL_FUNC(obj->element, rayIntersection, biased_e, d, &tmpresult,
-                                       &t1) && t1<nearest) {
+                                &t1) && t1<nearest) {
             /* hit is closest so far */
             *hit_object = obj;
             nearest = t1;
@@ -228,7 +228,7 @@ static unsigned int ray_color(const point3 e, double t,
 
     /* check for intersection with a sphere or a rectangular */
     intersection ip = ray_hit_object(e, d, t, MAX_DISTANCE, objects, &hit_object);
-   
+
     if (!hit_object)
         return 0;
 
@@ -247,7 +247,7 @@ static unsigned int ray_color(const point3 e, double t,
         /* check for intersection with an object. use ignore_me
          * because we don't care about this normal
         */
-        ray_hit_object(ip.point, _l, MIN_DISTANCE, length(l), 
+        ray_hit_object(ip.point, _l, MIN_DISTANCE, length(l),
                        objects, &light_hit_object);
 
         /* the light was not block by itself(lit object) */
@@ -258,7 +258,7 @@ static unsigned int ray_color(const point3 e, double t,
                                      ip.normal, fill.phong_power);
 
         localColor(object_color, light->element.light_color,
-                  diffuse, specular, &fill);
+                   diffuse, specular, &fill);
     }
 
     reflection(r, d, ip.normal);
@@ -266,9 +266,11 @@ static unsigned int ray_color(const point3 e, double t,
     if(idx_stack_top(stk).obj==hit_object) {
         idx_stack_pop(stk);
         idx_pass = idx_stack_top(stk).idx;
-    }else
-        idx_stack_push(stk, (idx_stack_element) {.obj=hit_object, .idx = fill.index_of_refraction});
-    
+    } else
+        idx_stack_push(stk, (idx_stack_element) {
+        .obj=hit_object, .idx = fill.index_of_refraction
+    });
+
     refraction(rr, d, ip.normal, idx, idx_pass);
     double R = fill.T>0.1? fresnel(d, rr, ip.normal, idx, idx_pass): 1.0;
 
@@ -278,12 +280,12 @@ static unsigned int ray_color(const point3 e, double t,
         * that's a result of that */
         int old_top = stk->top;
         if (ray_color(ip.point, MIN_DISTANCE , r, stk, objects,
-                          lights, reflection_part,
-                          bounces_left - 1)) {
+                      lights, reflection_part,
+                      bounces_left - 1)) {
             multiply_vector(reflection_part, R*(1.0-fill.Kd)*fill.R,
                             reflection_part);
             add_vector(object_color, reflection_part,
-                               object_color);
+                       object_color);
         }
         stk->top = old_top;
     }
@@ -292,12 +294,12 @@ static unsigned int ray_color(const point3 e, double t,
     if (length(rr)>0.0 && fill.T > 0.0 && fill.index_of_refraction > 0.0) {
         normalize(rr);
         if (ray_color(ip.point, MIN_DISTANCE, rr, stk, objects,
-                          lights, refraction_part,
-                          bounces_left - 1)) {
+                      lights, refraction_part,
+                      bounces_left - 1)) {
             multiply_vector(refraction_part, (1.0-R)*fill.T,
                             refraction_part);
             add_vector(object_color, refraction_part,
-                           object_color);
+                       object_color);
         }
     }
     return 1;
@@ -305,7 +307,7 @@ static unsigned int ray_color(const point3 e, double t,
 
 /* @param background_color this is not ambient light */
 void raytracing(uint8_t *pixels, color background_color,
-                object_node objects, light_node lights, 
+                object_node objects, light_node lights,
                 const viewpoint *view,
                 int width, int height, event_progress_change event_progress)
 {
@@ -343,12 +345,70 @@ void raytracing(uint8_t *pixels, color background_color,
                 pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
             }
             cur_percent=(float)(j*width+i) / (width * height) * 100;
-            if(cur_percent - last_percent > 1.0f){
-                 if(event_progress)
-                 	if(!event_progress((float)(j*width+i) / (width * height) * 100))
-                 		return;
-            	  SWAP(float, last_percent, cur_percent);
+            if(cur_percent - last_percent > 1.0f) {
+                if(event_progress)
+                    if(!event_progress((float)(j*width+i) / (width * height) * 100))
+                        return;
+                SWAP(float, last_percent, cur_percent);
             }
         }
+    }
+}
+
+/* @param background_color this is not ambient light */
+void pathtracing(uint8_t *pixels, color background_color,
+                 object_node objects, light_node lights,
+                 const viewpoint *view,
+                 int width, int height, event_progress_change event_progress, event_after_iteration event_iter)
+{
+    point3 u, v, w, d;
+    color object_color = { 0.0, 0.0, 0.0 };
+
+    /* calculate u, v, w */
+    calculateBasisVectors(u, v, w, view);
+
+    idx_stack stk;
+
+    float cur_percent, last_percent;
+    int factor=sqrt(SAMPLES);
+    int iter=0;
+    while(1) {
+        last_percent=0.0;
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                double r=0, g=0, b=0;
+                for(int s=0; s < SAMPLES; s++) {
+                    idx_stack_init(&stk);
+                    rayConstruction(d, u, v, w, i*factor+s/factor, j*factor+s%factor, view, width*factor, height*factor);
+                    normalize(d);
+                    if (ray_color(view->vrp, 0.0, d, &stk, objects,
+                                  lights, object_color,
+                                  MAX_REFLECTION_BOUNCES)) {
+                        clamp(object_color);
+                        r += object_color[0];
+                        g += object_color[1];
+                        b += object_color[2];
+                    } else {
+                        r += background_color[0];
+                        g += background_color[1];
+                        b += background_color[2];
+                    }
+                    pixels[((i + (j*width)) * 3) + 0] = ((double)pixels[((i + (j*width)) * 3) + 0]*iter+r * 255 / SAMPLES)/(iter+1);
+                    pixels[((i + (j*width)) * 3) + 1] = ((double)pixels[((i + (j*width)) * 3) + 1]*iter+g * 255 / SAMPLES)/(iter+1);
+                    pixels[((i + (j*width)) * 3) + 2] = ((double)pixels[((i + (j*width)) * 3) + 2]*iter+b * 255 / SAMPLES)/(iter+1);
+                }
+                cur_percent=(float)(j*width+i) / (width * height) * 100;
+                if(cur_percent - last_percent > 1.0f) {
+                    if(event_progress)
+                        if(!event_progress((float)(j*width+i) / (width * height) * 100))
+                            return;
+                    SWAP(float, last_percent, cur_percent);
+                }
+            }
+        }
+        iter++;
+        if(event_iter)
+            if(!event_iter(iter))
+                break;
     }
 }

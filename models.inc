@@ -104,5 +104,5 @@ rectangle rectangle3 = {
 
 /* The following will be preprocessed by Makefile, they are "not only" comments */
 /*
-LOAD_OBJ_SCENE models/monkey.obj {5,15,10} {-1.57,0,-1.57} {5,5,5}
+//LOAD_OBJ_SCENE models/monkey.obj {5,15,10} {-1.57,0,-1.57} {5,5,5}
 */

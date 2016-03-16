@@ -40,8 +40,7 @@ static int load_obj_scene(const char *filename, point3 translate, point3 rotate,
     obj_scene_data data;
 
     printf("# Loading obj scene...");
-    if( !parse_obj_scene(&data, filename) )
-    {
+    if( !parse_obj_scene(&data, filename) ) {
         printf("Failed\n");
         return 0;
     }
@@ -53,11 +52,9 @@ static int load_obj_scene(const char *filename, point3 translate, point3 rotate,
     multiply_mat3(rotate_mat, scale_matrix, rotate_scale_mat);
 
     obj_material *mtl;
-    for(int i=0; i<data.face_count; i++)
-    {
+    for(int i=0; i<data.face_count; i++) {
         obj_face *o = data.face_list[i];
-        for(int j=0; j<3; j++)
-        {
+        for(int j=0; j<3; j++) {
             multiply_mat3_vector(rotate_scale_mat, data.vertex_list[ o->vertex_index[j]]->e, tmp1[i*3+j]);
             tmp1[i*3+j][0] += translate[0];
             tmp1[i*3+j][1] += translate[1];
@@ -95,6 +92,13 @@ static int progrss_report(float percent)
     return keep_running;
 }
 
+static int iter_report(int iter)
+{
+    printf("\nIteration %d done\n", iter);
+    fflush(stdout);
+    return keep_running;
+}
+
 int main()
 {
     uint8_t *pixels;
@@ -113,8 +117,8 @@ int main()
 
     printf("# Rendering scene\n");
     /* do the ray tracing with the given geometry */
-    raytracing(pixels, background,
-               objects, lights, &view, ROWS, COLS, progrss_report);
+    pathtracing(pixels, background,
+               objects, lights, &view, ROWS, COLS, progrss_report, iter_report);
     {
         FILE *outfile = fopen(OUT_FILENAME, "wb");
         write_to_ppm(outfile, pixels, ROWS, COLS);
