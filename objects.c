@@ -11,8 +11,7 @@ void append_object(const object *X, object_node *list)
     newNode->next = NULL;
     if(!*list)
         *list = newNode;
-    else
-    {
+    else {
         object_node p;
         /* locate the last node */
         for(p=*list; p->next; p=p->next);
@@ -23,12 +22,11 @@ void append_object(const object *X, object_node *list)
 void append_light(const light *X, light_node *list)
 {
     light_node newNode = malloc(sizeof(light_node_body));
-    newNode->element = *X;    
+    newNode->element = *X;
     newNode->next = NULL;
     if(!*list)
         *list = newNode;
-    else
-    {
+    else {
         light_node p;
         /* locate the last node */
         for(p=*list; p->next; p=p->next);
@@ -36,24 +34,24 @@ void append_light(const light *X, light_node *list)
     }
 }
 
-void delete_light_list(light_node *list) 
-{ 
-    while(*list) { 
-        light_node nextNode= (*list)->next; 
-        free(*list); 
-        *list = nextNode; 
-    } 
+void delete_light_list(light_node *list)
+{
+    while(*list) {
+        light_node nextNode= (*list)->next;
+        free(*list);
+        *list = nextNode;
+    }
 }
 
-void delete_object_list(object_node *list) 
-{ 
-    while(*list) { 
-        object_node nextNode= (*list)->next; 
-        /* release private data */ 
+void delete_object_list(object_node *list)
+{
+    while(*list) {
+        object_node nextNode= (*list)->next;
+        /* release private data */
         INVOKE_VIRTUAL_FUNC((*list)->element, release);
-        free(*list); 
-        *list = nextNode; 
-    } 
+        free(*list);
+        *list = nextNode;
+    }
 }
 
 // *INDENT-ON*

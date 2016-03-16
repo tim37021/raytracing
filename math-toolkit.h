@@ -94,40 +94,66 @@ void clamp(double *c)
 static inline
 void scalar_matrix(const double *scalar, double *v)
 {
-   v[0] = scalar[0]; v[1] = 0; v[2] = 0.0;
-   v[3] = 0.0; v[4] = scalar[1]; v[5] = 0.0;
-   v[6] = 0.0; v[7] = 0.0; v[8] = scalar[2];
+    v[0] = scalar[0];
+    v[1] = 0;
+    v[2] = 0.0;
+    v[3] = 0.0;
+    v[4] = scalar[1];
+    v[5] = 0.0;
+    v[6] = 0.0;
+    v[7] = 0.0;
+    v[8] = scalar[2];
 }
 
 
 static inline
 void identity_matrix(double *v)
 {
-    scalar_matrix((double [3]) {1.0, 1.0, 1.0}, v);
+    scalar_matrix((double [3]) {
+        1.0, 1.0, 1.0
+    }, v);
 }
 
 static inline
 void rotation_matrix_x(double t, double *v)
 {
-   v[0] = 1.0; v[1] = 0; v[2] = 0.0;
-   v[3] = 0.0; v[4] = cos(-t); v[5] = -sin(-t);
-   v[6] = 0.0; v[7] = sin(-t); v[8] = cos(-t);
+    v[0] = 1.0;
+    v[1] = 0;
+    v[2] = 0.0;
+    v[3] = 0.0;
+    v[4] = cos(-t);
+    v[5] = -sin(-t);
+    v[6] = 0.0;
+    v[7] = sin(-t);
+    v[8] = cos(-t);
 }
 
 static inline
 void rotation_matrix_y(double t, double *v)
 {
-   v[0] = cos(-t); v[1] = 0; v[2] = sin(-t);
-   v[3] = 0.0; v[4] = 1.0; v[5] = 0.0;
-   v[6] = -sin(-t); v[7] = 0.0; v[8] = cos(-t);
+    v[0] = cos(-t);
+    v[1] = 0;
+    v[2] = sin(-t);
+    v[3] = 0.0;
+    v[4] = 1.0;
+    v[5] = 0.0;
+    v[6] = -sin(-t);
+    v[7] = 0.0;
+    v[8] = cos(-t);
 }
 
 static inline
 void rotation_matrix_z(double t, double *v)
 {
-   v[0] = cos(-t); v[1] = -sin(-t); v[2] = 0.0;
-   v[3] = sin(-t); v[4] = cos(-t); v[5] = 0.0;
-   v[6] = 0.0; v[7] = 0.0; v[8] = 1.0;
+    v[0] = cos(-t);
+    v[1] = -sin(-t);
+    v[2] = 0.0;
+    v[3] = sin(-t);
+    v[4] = cos(-t);
+    v[5] = 0.0;
+    v[6] = 0.0;
+    v[7] = 0.0;
+    v[8] = 1.0;
 }
 
 /* NOTE: out can't be overlap with u or v */

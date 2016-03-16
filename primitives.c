@@ -9,20 +9,20 @@ static int raySphereIntersection(const object *obj,
                                  intersection *ip,
                                  double *t1);
 static int rayRectangleIntersection(const object *obj,
-                                      const point3 ray_e,
-                                      const point3 ray_d,
-                                      intersection *ip,
-                                      double *t1);
+                                    const point3 ray_e,
+                                    const point3 ray_d,
+                                    intersection *ip,
+                                    double *t1);
 static int rayTriangleIntersection(const object *obj,
-                                      const point3 ray_e,
-                                      const point3 ray_d,
-                                      intersection *ip,
-                                      double *t1);
+                                   const point3 ray_e,
+                                   const point3 ray_d,
+                                   intersection *ip,
+                                   double *t1);
 static int rayTriangleMeshIntersection(const object *obj,
-                                      const point3 ray_e,
-                                      const point3 ray_d,
-                                      intersection *ip,
-                                      double *t1);
+                                       const point3 ray_e,
+                                       const point3 ray_d,
+                                       intersection *ip,
+                                       double *t1);
 static void cloneSphere(const object *src, object *dest);
 static void cloneRectangle(const object *src, object *dest);
 static void cloneTriangle(const object *src, object *dest);
@@ -30,10 +30,10 @@ static void cloneTriangleMesh(const object *src, object *dest);
 static void emptyRelease(const object *src);
 static void releaseTriangleMesh(const object *src);
 
-object_virtual_table vt_sphere={.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .release=emptyRelease, .private_data_size = sizeof(sphere)-sizeof(object)};
-object_virtual_table vt_rectangle={.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=cloneRectangle, .release=emptyRelease, .private_data_size = sizeof(rectangle)-sizeof(object)};
-object_virtual_table vt_triangle={.object_id=2, .rayIntersection=rayTriangleIntersection, .clone=cloneTriangle, .release=emptyRelease, .private_data_size = sizeof(triangle)-sizeof(object)};
-object_virtual_table vt_triangle_mesh={.object_id=3, .rayIntersection=rayTriangleMeshIntersection, .clone=cloneTriangleMesh, .release=releaseTriangleMesh, .private_data_size = sizeof(triangle_mesh)-sizeof(object)};
+object_virtual_table vt_sphere= {.object_id=0, .rayIntersection=raySphereIntersection, .clone=cloneSphere, .release=emptyRelease, .private_data_size = sizeof(sphere)-sizeof(object)};
+object_virtual_table vt_rectangle= {.object_id=1, .rayIntersection=rayRectangleIntersection, .clone=cloneRectangle, .release=emptyRelease, .private_data_size = sizeof(rectangle)-sizeof(object)};
+object_virtual_table vt_triangle= {.object_id=2, .rayIntersection=rayTriangleIntersection, .clone=cloneTriangle, .release=emptyRelease, .private_data_size = sizeof(triangle)-sizeof(object)};
+object_virtual_table vt_triangle_mesh= {.object_id=3, .rayIntersection=rayTriangleMeshIntersection, .clone=cloneTriangleMesh, .release=releaseTriangleMesh, .private_data_size = sizeof(triangle_mesh)-sizeof(object)};
 
 /* @param t t distance
  * @return 1 means hit, otherwise 0
@@ -47,20 +47,20 @@ static int raySphereIntersection(const object *obj,
     const sphere *sph = (const sphere *)obj;
     point3 l;
     subtract_vector(sph->center, ray_e, l);
-	double s = dot_product(l, ray_d);
-	double l2 = dot_product(l, l);
-	double r2 = sph->radius*sph->radius;
+    double s = dot_product(l, ray_d);
+    double l2 = dot_product(l, l);
+    double r2 = sph->radius*sph->radius;
 
-	if(s<0 && l2 > r2)
-		return 0;
-	float m2 = l2 - s*s;
-	if(m2>r2)
-		return 0;
-	float q = sqrt(r2 - m2);
-	if(l2>r2)
-		*t1 = s - q;
-	else
-		*t1 = s + q;
+    if(s<0 && l2 > r2)
+        return 0;
+    float m2 = l2 - s*s;
+    if(m2>r2)
+        return 0;
+    float q = sqrt(r2 - m2);
+    if(l2>r2)
+        *t1 = s - q;
+    else
+        *t1 = s + q;
     // p=e+t1*d
     multiply_vector(ray_d, *t1, ip->point);
     add_vector(ray_e, ip->point, ip->point);
@@ -69,16 +69,16 @@ static int raySphereIntersection(const object *obj,
     normalize(ip->normal);
     if(dot_product(ip->normal, ray_d)>0.0)
         multiply_vector(ip->normal, -1, ip->normal);
-      
-	return 1;
+
+    return 1;
 }
 
 /* @return 1 means hit, otherwise 0; */
 static int rayRectangleIntersection(const object *obj,
-                                      const point3 ray_e,
-                                      const point3 ray_d,
-                                      intersection *ip,
-                                      double *t1)
+                                    const point3 ray_e,
+                                    const point3 ray_d,
+                                    intersection *ip,
+                                    double *t1)
 {
     const rectangle *rec = (const rectangle *)obj;
 
@@ -93,7 +93,7 @@ static int rayRectangleIntersection(const object *obj,
     // Reject rays orthagonal to the normal vector. I.e. rays parallell to the plane.
     if(det < 1e-4)
         return 0;
-    
+
     double inv_det = 1.0/det;
 
     point3 s;
@@ -122,7 +122,7 @@ static int rayRectangleIntersection(const object *obj,
         point3 e23, e21;
         subtract_vector(rec->vertices[3], rec->vertices[2], e23);
         subtract_vector(rec->vertices[1], rec->vertices[2], e21);
-        
+
         cross_product(ray_d, e21, p);
 
         det = dot_product(e23, p);
@@ -132,11 +132,11 @@ static int rayRectangleIntersection(const object *obj,
 
         inv_det = 1.0/det;
         subtract_vector(ray_e, rec->vertices[2], s);
-        
+
         alpha = inv_det * dot_product(s, p);
         if(alpha < 0.0)
             return 0;
-        
+
         cross_product(s, e23, q);
         beta = inv_det * dot_product(ray_d, q);
 
@@ -145,13 +145,13 @@ static int rayRectangleIntersection(const object *obj,
 
         if(beta + alpha > 1.0)
             return 0;
- 
+
         *t1 = inv_det * dot_product(e21, q);
     }
-    
+
     if(*t1 < 1e-4)
         return 0;
-    
+
     cross_product(e01, e03, ip->normal);
     normalize(ip->normal);
     if(dot_product(ip->normal, ray_d)>0.0)
@@ -163,10 +163,10 @@ static int rayRectangleIntersection(const object *obj,
 }
 
 static int rayTriangleIntersection(const object *obj,
-                                      const point3 ray_e,
-                                      const point3 ray_d,
-                                      intersection *ip,
-                                      double *t1)
+                                   const point3 ray_e,
+                                   const point3 ray_d,
+                                   intersection *ip,
+                                   double *t1)
 {
     const triangle *tri = (const triangle *)obj;
 
@@ -181,7 +181,7 @@ static int rayTriangleIntersection(const object *obj,
     // Reject rays orthagonal to the normal vector. I.e. rays parallell to the plane.
     if(det < 1e-4)
         return 0;
-    
+
     double inv_det = 1.0/det;
 
     point3 s;
@@ -209,7 +209,7 @@ static int rayTriangleIntersection(const object *obj,
 
     if(*t1 < 1e-4)
         return 0;
-    
+
     cross_product(e01, e02, ip->normal);
     normalize(ip->normal);
     if(dot_product(ip->normal, ray_d)>0.0)
@@ -221,10 +221,10 @@ static int rayTriangleIntersection(const object *obj,
 }
 
 static int rayTriangleMeshIntersection(const object *obj,
-                                      const point3 ray_e,
-                                      const point3 ray_d,
-                                      intersection *ip,
-                                      double *t1)
+                                       const point3 ray_e,
+                                       const point3 ray_d,
+                                       intersection *ip,
+                                       double *t1)
 {
     const triangle_mesh *tri_mesh = (const triangle_mesh *)obj;
     int i;

@@ -37,7 +37,7 @@ typedef struct {
     int private_data_size;
 } object_virtual_table;
 
-typedef struct _OBJECT{
+typedef struct _OBJECT {
     object_virtual_table *vt;
     object_fill fill;
     char private_data[];
@@ -83,7 +83,7 @@ typedef struct {
     point3 vup;
 } viewpoint;
 
-typedef struct _INTERSECTION{
+typedef struct _INTERSECTION {
     point3 point;
     point3 normal;
 } intersection;

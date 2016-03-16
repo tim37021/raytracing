@@ -25,6 +25,6 @@ void delete_light_list(light_node *list);
 
 
 /* the following is gcc extension, allowing zero argument */
- #define INVOKE_VIRTUAL_FUNC(obj, member, ...) (obj).vt->member(&(obj), ##__VA_ARGS__) 
+#define INVOKE_VIRTUAL_FUNC(obj, member, ...) (obj).vt->member(&(obj), ##__VA_ARGS__)
 
 #endif
