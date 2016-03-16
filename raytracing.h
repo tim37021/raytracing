@@ -4,7 +4,8 @@
 #include "objects.h"
 #include <stdint.h>
 
-typedef void (*event_progress_change)(float percent);
+/* return true if you wish to keep running */
+typedef int (*event_progress_change)(float percent);
 
 void raytracing(uint8_t *pixels, color background_color,
                 object_node rectangulars, light_node lights, 

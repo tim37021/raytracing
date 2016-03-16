@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <signal.h>
 
 #include "primitives.h"
 #include "raytracing.h"
@@ -12,6 +13,8 @@
 #define ROWS 512
 #define COLS 512
 #define MAX_VERTICES 4096
+
+int keep_running = 1;
 
 static void write_to_ppm(FILE *outfile, uint8_t *pixels,
                          int width, int height)
@@ -80,10 +83,16 @@ static int load_obj_scene(const char *filename, point3 translate, point3 rotate,
     return 1;
 }
 
-void progrss_report(float percent)
+static void signal_handler(int parameter)
+{
+    keep_running = 0;
+}
+
+static int progrss_report(float percent)
 {
     printf("\r[ %.0f%% ]", percent);
     fflush(stdout);
+    return keep_running;
 }
 
 int main()
@@ -92,6 +101,9 @@ int main()
     light_node lights = NULL;
     object_node objects = NULL;
     color background = { 0.0, 0.0, 0.0 };
+
+    /* setup signal handler */
+    signal(SIGINT, signal_handler);
 
 #include "use-models.h"
 

@@ -14,6 +14,7 @@
 
 #define SQUARE(x) (x * x)
 #define MAX(a, b) (a > b ? a : b)
+#define SWAP(type, a, b) {type tmp=a; a=b; b=tmp;}
 
 static void localColor(color local_color,
                        const color light_color, double diffuse,
@@ -344,10 +345,9 @@ void raytracing(uint8_t *pixels, color background_color,
             cur_percent=(float)(j*width+i) / (width * height) * 100;
             if(cur_percent - last_percent > 1.0f){
                  if(event_progress)
-                 	event_progress((float)(j*width+i) / (width * height) * 100);
-            	  float tmp_p = cur_percent;
-            	  cur_percent = last_percent;
-            	  last_percent = tmp_p;
+                 	if(!event_progress((float)(j*width+i) / (width * height) * 100))
+                 		return;
+            	  SWAP(float, last_percent, cur_percent);
             }
         }
     }
