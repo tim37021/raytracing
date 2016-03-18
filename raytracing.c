@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "math-toolkit.h"
 #include "primitives.h"
 #include "raytracing.h"
 #include "idx_stack.h"
+#include "sampler.h"
 
-#define MAX_REFLECTION_BOUNCES	3
+#define MAX_REFLECTION_BOUNCES	5
 #define MAX_DISTANCE 1000000000000.0
 #define MIN_DISTANCE 0.00001
 #define SAMPLES 1
@@ -302,6 +304,44 @@ static unsigned int ray_color(const point3 e, double t,
                        object_color);
         }
     }
+
+    add_vector(object_color, fill.emission, object_color);
+
+    return 1;
+}
+
+
+
+static unsigned int ray_color2(const point3 e, double t,
+                              const point3 d,
+                              idx_stack *stk,
+                              const object_node objects,
+                              const light_node lights,
+                              color object_color, int bounces_left, sampler *sampler)
+{
+    object_node hit_object = NULL;
+
+    /* might be a reflection ray, so check how many times we've bounced */
+    if (bounces_left == 0) {
+        SET_COLOR(object_color, 0.0, 0.0, 0.0);
+        return 0;
+    }
+
+    /* check for intersection with a sphere or a rectangular */
+    intersection ip = ray_hit_object(e, d, t, MAX_DISTANCE, objects, &hit_object);
+
+    if (!hit_object) {
+        SET_COLOR(object_color, 0.0, 0.0, 0.0);
+        return 0;
+    }
+
+    point3 d_diff;
+    color diff_color;
+    hemisphere_sampling(sampler, 2.5, ip.normal, d_diff);
+    ray_color2(ip.point, MIN_DISTANCE, d_diff, stk, objects, lights, diff_color, bounces_left-1, sampler);
+    multiply_vector(diff_color, 2.0* hit_object->element.fill.Kd*dot_product(ip.normal, d_diff), object_color);
+    multiply_vectors(object_color, hit_object->element.fill.fill_color, object_color);
+    add_vector(object_color, hit_object->element.fill.emission, object_color);
     return 1;
 }
 
@@ -344,12 +384,12 @@ void raytracing(uint8_t *pixels, color background_color,
                 pixels[((i + (j*width)) * 3) + 1] = g * 255 / SAMPLES;
                 pixels[((i + (j*width)) * 3) + 2] = b * 255 / SAMPLES;
             }
-            cur_percent=(float)(j*width+i) / (width * height) * 100;
-            if(cur_percent - last_percent > 1.0f) {
-                if(event_progress)
-                    if(!event_progress((float)(j*width+i) / (width * height) * 100))
-                        return;
-                SWAP(float, last_percent, cur_percent);
+            cur_percent=(float)((j+1)*width+(i+1)) / (width * height) * 100;
+            if(cur_percent - last_percent > 1.0f){
+                 if(event_progress)
+                 	if(!event_progress(cur_percent))
+                 		return;
+            	  SWAP(float, last_percent, cur_percent);
             }
         }
     }
@@ -372,6 +412,7 @@ void pathtracing(uint8_t *pixels, color background_color,
     float cur_percent, last_percent;
     int factor=sqrt(SAMPLES);
     int iter=0;
+    sampler *sampler = create_sampler(time(NULL), 256);
     while(1) {
         last_percent=0.0;
         for (int j = 0; j < height; j++) {
@@ -381,9 +422,9 @@ void pathtracing(uint8_t *pixels, color background_color,
                     idx_stack_init(&stk);
                     rayConstruction(d, u, v, w, i*factor+s/factor, j*factor+s%factor, view, width*factor, height*factor);
                     normalize(d);
-                    if (ray_color(view->vrp, 0.0, d, &stk, objects,
+                    if (ray_color2(view->vrp, 0.0, d, &stk, objects,
                                   lights, object_color,
-                                  MAX_REFLECTION_BOUNCES)) {
+                                  MAX_REFLECTION_BOUNCES, sampler)) {
                         clamp(object_color);
                         r += object_color[0];
                         g += object_color[1];
@@ -393,22 +434,25 @@ void pathtracing(uint8_t *pixels, color background_color,
                         g += background_color[1];
                         b += background_color[2];
                     }
-                    pixels[((i + (j*width)) * 3) + 0] = ((double)pixels[((i + (j*width)) * 3) + 0]*iter+r * 255 / SAMPLES)/(iter+1);
-                    pixels[((i + (j*width)) * 3) + 1] = ((double)pixels[((i + (j*width)) * 3) + 1]*iter+g * 255 / SAMPLES)/(iter+1);
-                    pixels[((i + (j*width)) * 3) + 2] = ((double)pixels[((i + (j*width)) * 3) + 2]*iter+b * 255 / SAMPLES)/(iter+1);
                 }
-                cur_percent=(float)(j*width+i) / (width * height) * 100;
-                if(cur_percent - last_percent > 1.0f) {
-                    if(event_progress)
-                        if(!event_progress((float)(j*width+i) / (width * height) * 100))
-                            return;
-                    SWAP(float, last_percent, cur_percent);
+                    pixels[((i + (j*width)) * 3) + 0] = ((double)pixels[((i + (j*width)) * 3) + 0]*iter+r * 255.0 / SAMPLES)/(iter+1);
+                    pixels[((i + (j*width)) * 3) + 1] = ((double)pixels[((i + (j*width)) * 3) + 1]*iter+g * 255.0 / SAMPLES)/(iter+1);
+                    pixels[((i + (j*width)) * 3) + 2] = ((double)pixels[((i + (j*width)) * 3) + 2]*iter+b * 255.0 / SAMPLES)/(iter+1);
+            cur_percent=(float)((j+1)*width+(i+1)) / (width * height) * 100;
+            if(cur_percent - last_percent > 1.0f){
+                 if(event_progress)
+                 	if(!event_progress(cur_percent))
+                 		return;
+            	  SWAP(float, last_percent, cur_percent);
                 }
+                regen_sampler(sampler, time(NULL)+iter+j+rand(), 256);
             }
         }
         iter++;
         if(event_iter)
-            if(!event_iter(iter))
+            if(!event_iter(iter, pixels))
                 break;
+         //regen_sampler(sampler, time(NULL)+iter, 256);
     }
+    release_sampler(sampler);
 }

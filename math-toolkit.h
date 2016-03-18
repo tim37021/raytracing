@@ -156,6 +156,20 @@ void rotation_matrix_z(double t, double *v)
     v[8] = 1.0;
 }
 
+static inline 
+void construct_mat3(const double *u, const double *v, const double *w, double *out)
+{
+    out[0] = u[0];
+    out[1] = v[0];
+    out[2] = w[0];
+    out[3] = u[1];
+    out[4] = v[1];
+    out[5] = w[1];
+    out[6] = u[2];
+    out[7] = v[2];
+    out[8] = w[2];
+}
+
 /* NOTE: out can't be overlap with u or v */
 static inline
 void multiply_mat3(const double *u, const double *v, double *out)

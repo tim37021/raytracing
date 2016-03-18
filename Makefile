@@ -21,6 +21,7 @@ OBJS := \
 	objects.o \
 	raytracing.o \
 	primitives.o \
+	sampler.o \
 	main.o
 
 OBJS_OBJPARSER := \

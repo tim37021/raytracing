@@ -6,7 +6,7 @@
 
 /* return true if you wish to keep running */
 typedef int (*event_progress_change)(float percent);
-typedef int (*event_after_iteration)(int iter);
+typedef int (*event_after_iteration)(int iter, uint8_t *pixels);
 
 void raytracing(uint8_t *pixels, color background_color,
                 object_node rectangulars, light_node lights,

@@ -14,34 +14,36 @@ light light2 = {
 
 static
 sphere sphere1 = {
-    .center = { 5, 0, 5 },
-    .radius = 3,
+    .center = { 10, 10, 20 },
+    .radius = 7,
     .fill = {
         .fill_color = { 0.8, 0.8, 0.8 },
+        .emission = {1.0, 1.0, 1.0},
         .Kd = 0.8, .Ks = 0.8, .T = 0.0, .R=0.6,
         .index_of_refraction = 0.0, .phong_power = 30.0
     }
 };
 
-
 static
 sphere sphere2 = {
-    .center = { 20, 15, 15 },
-    .radius = 3,
+    .center = { 10, 5, 2 },
+    .radius = 2,
     .fill = {
-        .fill_color = { 0.8, 0.6, 0.4 },
-        .Kd = 0.0, .Ks = 1.0, .T = 1.0, .R=1.0,
-        .index_of_refraction = 1.5, .phong_power = 30.0
+        .fill_color = { 0.8, 0.8, 0.8 },
+        .emission = {1.0, 1.0, 1.0},
+        .Kd = 0.8, .Ks = 0.8, .T = 0.0, .R=0.6,
+        .index_of_refraction = 0.0, .phong_power = 30.0
     }
 };
 
 static
 sphere sphere3 = {
-    .center = { 5, 10, 5 },
-    .radius = 3,
+    .center = { 7, 10, 5 },
+    .radius = 5,
     .fill = {
-        .fill_color = { 0.4, 0.8, 0.6 },
-        .Kd = 0.8, .Ks = 0.1, .T = 0.0, .R=0.1,
+        .fill_color = { 0.4, 1.0, 0.6 },
+        .emission = {0.0, 0.0, 0.0},
+        .Kd = 1.0, .Ks = 0.1, .T = 0.0, .R=0.1,
         .index_of_refraction = 0.0, .phong_power = 30.0
     }
 };
@@ -65,6 +67,7 @@ rectangle rectangle1 = {
     },
     .fill = {
         .fill_color = { 0.6, 0.6, 0.6 },
+        .emission = {0.0, 0.0, 0.0},
         .Kd = 0.8, .Ks = 0.0, .T = 0.0, .R=0.5,
         .index_of_refraction = 0.0, .phong_power = 5.0,
     },
@@ -80,6 +83,7 @@ rectangle rectangle2 = {
     },
     .fill = {
         .fill_color = { 0.6, 0.1, 0.1 },
+        .emission = {0.0, 0.0, 0.0},
         .Kd = 0.8, .Ks = 0.0, .T = 0.0, .R=0.5,
         .index_of_refraction = 0.0, .phong_power = 5.0,
     },
@@ -97,6 +101,7 @@ rectangle rectangle3 = {
     },
     .fill = {
         .fill_color = { 0.1, 0.1, 0.6 },
+        .emission = {0.0, 0.0, 0.0},
         .Kd = 0.8, .Ks = 0.0, .T = 0.0, .R=0.5,
         .index_of_refraction = 0.0, .phong_power = 5.0,
     },

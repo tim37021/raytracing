@@ -14,6 +14,7 @@ typedef struct {
 
 typedef struct {
     color fill_color; /**< RGB is in terms of 0.0 to 1.0 */
+    color emission;
     double Kd; /**< the diffuse component */
     double Ks; /**< the specular */
     double T;  /**< transmittance (fraction of light passed per unit) */

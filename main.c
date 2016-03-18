@@ -89,13 +89,16 @@ static int progrss_report(float percent)
 {
     printf("\r[ %.0f%% ]", percent);
     fflush(stdout);
-    return keep_running;
+    return 1;
 }
 
-static int iter_report(int iter)
+static int iter_report(int iter, uint8_t *pixels)
 {
     printf("\nIteration %d done\n", iter);
     fflush(stdout);
+        FILE *outfile = fopen(OUT_FILENAME, "wb");
+        write_to_ppm(outfile, pixels, ROWS, COLS);
+        fclose(outfile);
     return keep_running;
 }
 
