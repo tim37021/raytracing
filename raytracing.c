@@ -337,7 +337,7 @@ static unsigned int ray_color2(const point3 e, double t,
 
     point3 d_diff;
     color diff_color;
-    hemisphere_sampling(sampler, 1.0, ip.normal, d_diff);
+    hemisphere_sampling(sampler, 0.0, ip.normal, d_diff);
     ray_color2(ip.point, MIN_DISTANCE, d_diff, stk, objects, lights, diff_color, bounces_left-1, sampler);
     multiply_vector(diff_color, 2.0* hit_object->element.fill.Kd*dot_product(ip.normal, d_diff), object_color);
     multiply_vectors(object_color, hit_object->element.fill.fill_color, object_color);
