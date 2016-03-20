@@ -96,9 +96,9 @@ static int iter_report(int iter, uint8_t *pixels)
 {
     printf("\nIteration %d done\n", iter);
     fflush(stdout);
-        FILE *outfile = fopen(OUT_FILENAME, "wb");
-        write_to_ppm(outfile, pixels, ROWS, COLS);
-        fclose(outfile);
+    FILE *outfile = fopen(OUT_FILENAME, "wb");
+    write_to_ppm(outfile, pixels, ROWS, COLS);
+    fclose(outfile);
     return keep_running;
 }
 
@@ -121,7 +121,7 @@ int main()
     printf("# Rendering scene\n");
     /* do the ray tracing with the given geometry */
     pathtracing(pixels, background,
-               objects, lights, &view, ROWS, COLS, progrss_report, iter_report);
+                objects, lights, &view, ROWS, COLS, progrss_report, iter_report);
     {
         FILE *outfile = fopen(OUT_FILENAME, "wb");
         write_to_ppm(outfile, pixels, ROWS, COLS);

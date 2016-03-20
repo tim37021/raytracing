@@ -156,7 +156,7 @@ void rotation_matrix_z(double t, double *v)
     v[8] = 1.0;
 }
 
-static inline 
+static inline
 void construct_mat3(const double *u, const double *v, const double *w, double *out)
 {
     out[0] = u[0];

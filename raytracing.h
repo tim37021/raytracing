@@ -14,7 +14,7 @@ void raytracing(uint8_t *pixels, color background_color,
                 int width, int height, event_progress_change event_progress);
 
 void pathtracing(uint8_t *pixels, color background_color,
-                object_node rectangulars, light_node lights,
-                const viewpoint *view,
-                int width, int height, event_progress_change event_progress, event_after_iteration event_iter);
+                 object_node rectangulars, light_node lights,
+                 const viewpoint *view,
+                 int width, int height, event_progress_change event_progress, event_after_iteration event_iter);
 #endif
