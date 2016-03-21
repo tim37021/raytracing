@@ -489,10 +489,10 @@ void raytracing(uint8_t *pixels, color background_color,
                     g += background_color[1];
                     b += background_color[2];
                 }
-                pixels[((i + (j * width)) * 3) + 0] = r * 255 / SAMPLES;
-                pixels[((i + (j * width)) * 3) + 1] = g * 255 / SAMPLES;
-                pixels[((i + (j * width)) * 3) + 2] = b * 255 / SAMPLES;
             }
+            pixels[((i + (j * width)) * 3) + 0] = r * 255 / SAMPLES;
+            pixels[((i + (j * width)) * 3) + 1] = g * 255 / SAMPLES;
+            pixels[((i + (j * width)) * 3) + 2] = b * 255 / SAMPLES;
         }
     }
 }
